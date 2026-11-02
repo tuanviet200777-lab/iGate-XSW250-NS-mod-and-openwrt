@@ -1,7 +1,7 @@
 # Thông số kỹ thuật phần cứng: VNPT iGate XSW250-NS (XGS-PON ONT Wi-Fi 6)
-
-Tài liệu tổng hợp cấu hình phần cứng, vi xử lý trung tâm, bộ nhớ, hệ thống Wi-Fi 6 và các chip giao tiếp ngoại vi trên bo mạch **iGate XSW250-NS**.
-
+Repo Openwrt này đc fork lại từ ( https://github.com/voz188/openwrt-xsw050ns )
+Các tool hay sử dụng :tera tera5, tftpd32
+Hỏi chi tiết: https://discord.gg/5XbjNNtRFW
 ---
 
 ## 1. Vi xử lý trung tâm (Main SoC)
@@ -38,3 +38,23 @@ Tài liệu tổng hợp cấu hình phần cứng, vi xử lý trung tâm, bộ
 | **Dual-Port VoIP SLIC** | `SLLV5-SH8SQ.19` | **Dual-Channel Voice SLIC + CODEC (`PEF32002`)** điều khiển trực tiếp **2 cổng điện thoại bàn (2x FXS / RJ11)** | MaxLinear (Lantiq) |
 | **Bảo vệ quá áp cổng Tel** | `2x P61089B` | **2x Dual Programmable Thyristor Surge Suppressor (170V, SOP-8)** — Mạch bảo vệ chống sét/quá áp đường dây cho 2 cổng Tel (SLIC protection) | YAGEO / ST |
 | **XGS-PON Laser Driver** | `EN7573AN` | **10G-PON / XGS-PON BOSA Driver** (IC điều khiển công suất thu phát mắt quang 10G đối xứng) | EcoNet |
+
+---
+
+0.Lấy pass uart
+1.Cách lấy mật khẩu uart xem : ( https://github.com/ResearcherPT/vnptmodemresearch ) 
+Hướng dẫn lấy pass : 
+1.Vào web fw gốc vào mục backup tải file romfile.cfg
+2.Vào 
+
+---
+
+I.Backup fw gốc.(rất cần thiết) 
+1.Đăng nhập vào linux router thông qua uart vào temp ( cd /tmp )
+2.Tải an758x-stock2ubi  ( https://github.com/pbs05/an758x-stock2ubi/releases/tag/v0.1.14 ) upload file lên.
+3.Thực thi ( chmod +x /tmp/an758x-stock2ubi )
+4.Chạy root ( /tmp/an758x-stock2ubi )
+5.Mở web ( http://192.168.1.1:3333/ )
+6.Tải file backup về
+7.Chú ý không upload preloarder và uboot lên trang .
+---
