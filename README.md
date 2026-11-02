@@ -16,7 +16,7 @@ Tài liệu tổng hợp cấu hình phần cứng, vi xử lý trung tâm, bộ
 
 | Thành phần | Mã Chip | Dung lượng & Thông số kỹ thuật | Hãng sản xuất |
 | :--- | :--- | :--- | :--- |
-| **RAM hệ thống** | `W664GG6RB-06` | **512MB (4Gb) DDR4-2666** (Xung nhịp thực 1333 MHz / 2666 MT/s, cấu trúc 256M × 16, 1.2V) | Winbond |
+| **RAM hệ thống** | `W664GG6RB-06` | **512MB (4Gb) DDR4-2666** (Xung nhịp thực 1333 MHz / 2666 MT/s, cấu trúc 256M × 16, 1.2V) (khóa ở 3200mhz) | Winbond |
 | **Bộ nhớ Flash** | `25N02KVZEIR` | **256MB (2Gb) Serial SLC NAND Flash** (Giao tiếp SPI/QSPI 104 MHz, tích hợp 8-bit ECC) | Winbond |
 
 ---
