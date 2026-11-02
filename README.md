@@ -1,7 +1,11 @@
 # Thông số kỹ thuật phần cứng: VNPT iGate XSW250-NS (XGS-PON ONT Wi-Fi 6)
+
 Repo Openwrt này đc fork lại từ ( https://github.com/voz188/openwrt-xsw050ns )
+
 Các tool hay sử dụng :tera tera5, tftpd32
+
 Hỏi chi tiết: https://discord.gg/5XbjNNtRFW
+
 ---
 
 ## 1. Vi xử lý trung tâm (Main SoC)
