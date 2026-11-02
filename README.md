@@ -188,9 +188,6 @@ http://192.168.1.1:3333/
 
 Lưu các partition/MTD cần thiết ở nơi an toàn trước khi tiếp tục chỉnh sửa firmware.
 
-> [!CAUTION]
-> Theo ghi chú của README gốc: **không upload `preloader` và `U-Boot` lên giao diện này**.
-
 ---
 
 ## 📦 Tạo file `all_flash.bin`
