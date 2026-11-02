@@ -47,18 +47,29 @@ Hỏi chi tiết: https://discord.gg/5XbjNNtRFW
 
 0.Lấy pass uart
 1.Cách lấy mật khẩu uart xem : ( https://github.com/ResearcherPT/vnptmodemresearch ) 
+
 Hướng dẫn lấy pass : 
+
 1.Vào web fw gốc vào mục backup tải file romfile.cfg
+
 2.Vào 
 
 ---
 
 I.Backup fw gốc.(rất cần thiết) 
+
 1.Đăng nhập vào linux router thông qua uart vào temp ( cd /tmp )
+
 2.Tải an758x-stock2ubi  ( https://github.com/pbs05/an758x-stock2ubi/releases/tag/v0.1.14 ) upload file lên.
+
 3.Thực thi ( chmod +x /tmp/an758x-stock2ubi )
+
 4.Chạy root ( /tmp/an758x-stock2ubi )
+
 5.Mở web ( http://192.168.1.1:3333/ )
+
 6.Tải file backup về
+
 7.Chú ý không upload preloarder và uboot lên trang .
+
 ---
