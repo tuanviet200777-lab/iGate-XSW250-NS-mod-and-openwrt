@@ -80,3 +80,13 @@ I.Backup fw gốc.(rất cần thiết)
 7.Chú ý không upload preloarder và uboot lên trang .
 
 ---
+
+II.Tạo backup
+
+1.Để mtdx vào chung 1 thư mục và cả build_stock_all_flash.py 
+
+2.Chạy lệnh cmd ( python build_stock_all_flash.py . -o all_flash.bin )
+
+3.
+
+---
