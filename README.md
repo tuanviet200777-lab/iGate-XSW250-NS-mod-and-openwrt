@@ -1,92 +1,266 @@
-# Thông số kỹ thuật phần cứng: VNPT iGate XSW250-NS (XGS-PON ONT Wi-Fi 6)
+# 🚀 VNPT iGate XSW250-NS — OpenWrt & Hardware Notes
 
-Repo Openwrt này đc fork lại từ ( https://github.com/voz188/openwrt-xsw050ns )
+<p align="center">
+  <img src="https://img.shields.io/badge/Device-VNPT%20iGate%20XSW250--NS-blue?style=for-the-badge" alt="Device">
+  <img src="https://img.shields.io/badge/PON-XGS--PON-orange?style=for-the-badge" alt="XGS-PON">
+  <img src="https://img.shields.io/badge/Wi--Fi-Wi--Fi%206-brightgreen?style=for-the-badge" alt="Wi-Fi 6">
+  <img src="https://img.shields.io/badge/OpenWrt-Research-informational?style=for-the-badge" alt="OpenWrt Research">
+</p>
 
-Các tool hay sử dụng :tera tera5, tftpd32
+> [!NOTE]
+> Repo OpenWrt này được fork/phát triển dựa trên dự án:
+> **[voz188/openwrt-xsw050ns](https://github.com/voz188/openwrt-xsw050ns)**.
 
-Hỏi chi tiết: https://discord.gg/5XbjNNtRFW
-
----
-
-## 1. Vi xử lý trung tâm (Main SoC)
-
-| Thành phần | Mã Chip | Cấu trúc nhân / Xung nhịp & Chức năng | Hãng sản xuất |
-| :--- | :--- | :--- | :--- |
-| **Main XGS-PON SoC** | `AN7581CT` | **4 nhân ARM Cortex-A53 + 8 nhân RISC-V NPU** (Xử lý trung tâm, 10G XGS-PON MAC, tích hợp Switch Gigabit & tăng tốc phần cứng gói tin) | Airoha |
-
----
-
-## 2. Bộ nhớ & Lưu trữ (Memory & Storage)
-
-| Thành phần | Mã Chip | Dung lượng & Thông số kỹ thuật | Hãng sản xuất |
-| :--- | :--- | :--- | :--- |
-| **RAM hệ thống** | `W664GG6RB-06` | **512MB (4Gb) DDR4-2666** (Xung nhịp thực 1333 MHz / 2666 MT/s, cấu trúc 256M × 16, 1.2V) (khóa ở 3200mhz) | Winbond |
-| **Bộ nhớ Flash** | `25N02KVZEIR` | **256MB (2Gb) Serial SLC NAND Flash** (Giao tiếp SPI/QSPI 104 MHz, tích hợp 8-bit ECC) | Winbond |
+> [!WARNING]
+> Các thao tác với UART, U-Boot, NAND/MTD và firmware đều có nguy cơ làm thiết bị không khởi động được nếu thực hiện sai.
+> **Hãy backup firmware gốc trước khi chỉnh sửa hoặc flash bất kỳ thứ gì.**
 
 ---
 
-## 3. Hệ thống Wi-Fi 6 (Wireless AX3000 - Filogic 630)
+## 📚 Mục lục
 
-| Vai trò trong cụm Wi-Fi | Mã Chip | Cấu trúc & Thông số kỹ thuật | Hãng sản xuất |
-| :--- | :--- | :--- | :--- |
-| **Wi-Fi 6 Baseband / MAC** | `MT7916AN` | **Chip xử lý băng tần cơ sở (MAC/BBP)** tích hợp 32-bit RISC MCU, giao tiếp PCIe, chuẩn AX3000 (2×2 2.4GHz + 3×3/2×2 5GHz, 160MHz) | MediaTek |
-| **Wi-Fi 6 RF Transceiver** | `MT7976DN` | **Chip thu phát vô tuyến (RF Front-End)** băng tần kép 2.4GHz (2T2R) + 5GHz (3T3R), tích hợp sẵn bộ khuếch đại iPA / iLNA | MediaTek |
-
----
-
-## 4. Mạng Ethernet, Thoại (VoIP/FXS) & Quang học (PON)
-
-| Thành phần | Mã Chip | Thông số & Chức năng thực tế | Hãng sản xuất |
-| :--- | :--- | :--- | :--- |
-| **2.5GbE Ethernet PHY** | `EN8811HN` | **Single-port 2.5GBASE-T PHY** (Điều khiển cổng mạng LAN/WAN 2.5Gbps; 4 cổng 1Gbps còn lại nối trực tiếp vào Switch nội của SoC AN7581CT) | Airoha |
-| **Dual-Port VoIP SLIC** | `SLLV5-SH8SQ.19` | **Dual-Channel Voice SLIC + CODEC (`PEF32002`)** điều khiển trực tiếp **2 cổng điện thoại bàn (2x FXS / RJ11)** | MaxLinear (Lantiq) |
-| **Bảo vệ quá áp cổng Tel** | `2x P61089B` | **2x Dual Programmable Thyristor Surge Suppressor (170V, SOP-8)** — Mạch bảo vệ chống sét/quá áp đường dây cho 2 cổng Tel (SLIC protection) | YAGEO / ST |
-| **XGS-PON Laser Driver** | `EN7573AN` | **10G-PON / XGS-PON BOSA Driver** (IC điều khiển công suất thu phát mắt quang 10G đối xứng) | EcoNet |
+- [🔎 Tổng quan](#-tổng-quan)
+- [🧠 Main SoC](#-1-main-soc)
+- [💾 Bộ nhớ & lưu trữ](#-2-bộ-nhớ--lưu-trữ)
+- [📡 Wi-Fi 6](#-3-hệ-thống-wi-fi-6)
+- [🌐 Ethernet, VoIP & XGS-PON](#-4-ethernet-voip--xgs-pon)
+- [🧰 Công cụ thường dùng](#-công-cụ-thường-dùng)
+- [🔐 Lấy thông tin đăng nhập UART](#-lấy-thông-tin-đăng-nhập-uart)
+- [🛟 Backup firmware gốc](#-backup-firmware-gốc)
+- [📦 Tạo file `all_flash.bin`](#-tạo-file-all_flashbin)
+- [🔗 Tài liệu tham khảo](#-tài-liệu-tham-khảo)
+- [💬 Hỗ trợ / thảo luận](#-hỗ-trợ--thảo-luận)
 
 ---
 
-0.Lấy pass uart
+## 🔎 Tổng quan
 
-1.Cách lấy mật khẩu uart xem : ( https://github.com/ResearcherPT/vnptmodemresearch ) 
+| Hạng mục | Thông tin |
+|---|---|
+| **Thiết bị** | VNPT iGate XSW250-NS |
+| **Loại thiết bị** | XGS-PON ONT / Router |
+| **Wi-Fi** | Wi-Fi 6 / AX3000 |
+| **Main SoC** | Airoha `AN7581CT` |
+| **RAM** | 512 MB DDR4 |
+| **NAND Flash** | 256 MB SLC NAND |
+| **Ethernet nổi bật** | 1 × 2.5GbE PHY + các cổng Gigabit qua switch nội SoC |
+| **VoIP** | 2 × FXS / RJ11 |
 
-Hướng dẫn lấy pass : cài puthon và thư viện ( python -m pip install pycryptodome ) 
-
-1.Vào web fw gốc vào mục backup tải file romfile.cfg
-
-2.Vào vnptmodemresearch tải tool xgs_romfile.py để trong cùng 1 thư mục
-
-3.Mở cmd chạy ( python xgs_romfile.py keys --sn (xponsn) -o keys )    // có thể xem xponsn ở web debug or sau router.
-
-4.Xem key ở dd. (username là admin)
-
-Nếu vào uboot thì username=telecomadmin password=nE7jA%5m
-
----
-
-I.Backup fw gốc.(rất cần thiết) 
-
-1.Đăng nhập vào linux router thông qua uart vào temp ( cd /tmp )
-
-2.Tải an758x-stock2ubi  ( https://github.com/pbs05/an758x-stock2ubi/releases/tag/v0.1.14 ) upload file lên.
-
-3.Thực thi ( chmod +x /tmp/an758x-stock2ubi )
-
-4.Chạy root ( /tmp/an758x-stock2ubi )
-
-5.Mở web ( http://192.168.1.1:3333/ )
-
-6.Tải file backup về
-
-7.Chú ý không upload preloarder và uboot lên trang .
+> [!IMPORTANT]
+> Các thông số bên dưới được tổng hợp theo quá trình nghiên cứu thiết bị và nội dung README gốc của repo. Nếu bạn phát hiện sai khác giữa các revision phần cứng, hãy mở Issue/PR để bổ sung.
 
 ---
 
-II.Tạo backup
+## 🧠 1. Main SoC
 
-1.Để mtdx vào chung 1 thư mục và cả build_stock_all_flash.py 
-
-2.Chạy lệnh cmd ( python build_stock_all_flash.py . -o all_flash.bin )
-
-3.
+| Thành phần | Mã chip | Cấu trúc / chức năng | Hãng |
+|---|---|---|---|
+| **Main XGS-PON SoC** | `AN7581CT` | **4 × ARM Cortex-A53 + 8 × RISC-V NPU**; xử lý trung tâm, XGS-PON MAC 10G, switch Gigabit tích hợp và tăng tốc phần cứng gói tin | Airoha |
 
 ---
+
+## 💾 2. Bộ nhớ & lưu trữ
+
+| Thành phần | Mã chip | Dung lượng / thông số | Hãng |
+|---|---|---|---|
+| **RAM hệ thống** | `W664GG6RB-06` | **512 MB (4 Gb) DDR4-2666**; 1333 MHz / 2666 MT/s, cấu trúc 256M × 16, 1.2 V. README gốc có ghi chú: *khóa ở 3200 MHz* | Winbond |
+| **NAND Flash** | `25N02KVZEIR` | **256 MB (2 Gb) Serial SLC NAND Flash**; SPI/QSPI 104 MHz, tích hợp ECC 8-bit | Winbond |
+
+---
+
+## 📡 3. Hệ thống Wi-Fi 6
+
+**Wireless AX3000 — MediaTek Filogic 630**
+
+| Vai trò | Mã chip | Cấu trúc / thông số | Hãng |
+|---|---|---|---|
+| **Wi-Fi 6 Baseband / MAC** | `MT7916AN` | MAC/BBP tích hợp 32-bit RISC MCU, PCIe, AX3000; 2×2 2.4 GHz + 3×3/2×2 5 GHz, hỗ trợ 160 MHz | MediaTek |
+| **Wi-Fi 6 RF Transceiver** | `MT7976DN` | RF Front-End dual-band; 2.4 GHz 2T2R + 5 GHz 3T3R, tích hợp iPA / iLNA | MediaTek |
+
+---
+
+## 🌐 4. Ethernet, VoIP & XGS-PON
+
+| Thành phần | Mã chip | Chức năng thực tế | Hãng |
+|---|---|---|---|
+| **2.5GbE Ethernet PHY** | `EN8811HN` | Single-port 2.5GBASE-T PHY; điều khiển cổng LAN/WAN 2.5 Gbps. Các cổng 1 Gbps còn lại nối vào switch nội của `AN7581CT` | Airoha |
+| **Dual-Port VoIP SLIC** | `SLLV5-SH8SQ.19` | Dual-channel Voice SLIC + CODEC (`PEF32002`), điều khiển 2 cổng điện thoại **FXS / RJ11** | MaxLinear (Lantiq) |
+| **Bảo vệ quá áp cổng TEL** | `2 × P61089B` | Dual Programmable Thyristor Surge Suppressor, 170 V, SOP-8; bảo vệ chống sét/quá áp cho đường dây TEL | YAGEO / ST |
+| **XGS-PON Laser Driver** | `EN7573AN` | 10G-PON / XGS-PON BOSA Driver, điều khiển khối thu phát quang 10G đối xứng | EcoNet |
+
+---
+
+## 🧰 Công cụ thường dùng
+
+- **Tera Term / terminal UART**
+- **Tftpd32**
+- **Python 3**
+- Thư viện Python: `pycryptodome`
+- Tool `xgs_romfile.py`
+- Tool `an758x-stock2ubi`
+- Script `build_stock_all_flash.py`
+
+Cài thư viện cần thiết:
+
+```bash
+python -m pip install pycryptodome
+```
+
+---
+
+## 🔐 Lấy thông tin đăng nhập UART
+
+Tham khảo project:
+
+👉 **[ResearcherPT/vnptmodemresearch](https://github.com/ResearcherPT/vnptmodemresearch)**
+
+### Bước 1 — Backup `romfile.cfg`
+
+Đăng nhập giao diện web của firmware gốc và tải file backup:
+
+```text
+romfile.cfg
+```
+
+### Bước 2 — Chuẩn bị tool
+
+Tải `xgs_romfile.py` từ repo `vnptmodemresearch`, sau đó đặt cùng thư mục với file backup.
+
+### Bước 3 — Lấy key theo XPON SN
+
+Mở CMD/PowerShell tại thư mục chứa tool:
+
+```bash
+python xgs_romfile.py keys --sn <XPON_SN> -o keys
+```
+
+`<XPON_SN>` có thể xem trong giao diện debug hoặc trên tem của router.
+
+### Bước 4 — Xem kết quả
+
+Kiểm tra thư mục/file output `keys` do tool tạo ra.
+
+- Username Linux theo README gốc: `admin`
+- Thông tin đăng nhập U-Boot: **không nên commit mật khẩu plaintext lên GitHub public**.
+
+> [!CAUTION]
+> Nếu repo của bạn là public, hãy tránh đưa mật khẩu, serial riêng của thiết bị, key hoặc dữ liệu backup cá nhân vào commit.
+
+---
+
+## 🛟 Backup firmware gốc
+
+> [!IMPORTANT]
+> Đây là bước **rất nên thực hiện trước khi flash/mod firmware**.
+
+### 1. Đăng nhập Linux qua UART
+
+Chuyển sang thư mục tạm:
+
+```sh
+cd /tmp
+```
+
+### 2. Tải `an758x-stock2ubi`
+
+Release được README gốc sử dụng:
+
+👉 **[pbs05/an758x-stock2ubi v0.1.14](https://github.com/pbs05/an758x-stock2ubi/releases/tag/v0.1.14)**
+
+Upload binary vào `/tmp` trên router.
+
+### 3. Cấp quyền thực thi
+
+```sh
+chmod +x /tmp/an758x-stock2ubi
+```
+
+### 4. Chạy tool
+
+```sh
+/tmp/an758x-stock2ubi
+```
+
+### 5. Mở giao diện backup
+
+Trên máy tính cùng mạng, mở:
+
+```text
+http://192.168.1.1:3333/
+```
+
+### 6. Tải các file backup về máy
+
+Lưu các partition/MTD cần thiết ở nơi an toàn trước khi tiếp tục chỉnh sửa firmware.
+
+> [!CAUTION]
+> Theo ghi chú của README gốc: **không upload `preloader` và `U-Boot` lên giao diện này**.
+
+---
+
+## 📦 Tạo file `all_flash.bin`
+
+Sau khi đã có các file `mtd*` backup:
+
+### 1. Chuẩn bị thư mục
+
+Đặt các file MTD và script sau vào cùng một thư mục:
+
+```text
+mtd*.bin
+build_stock_all_flash.py
+```
+
+Ví dụ:
+
+```text
+backup/
+├── build_stock_all_flash.py
+├── mtd0-bootloader.bin
+├── mtd1-romfile.bin
+├── mtd4-tclinux.bin
+├── mtd7-tclinux_slave.bin
+├── mtd8-config.bin
+└── mtd9-userdata.bin
+```
+
+### 2. Ghép thành `all_flash.bin`
+
+Mở CMD/PowerShell tại thư mục trên và chạy:
+
+```bash
+python build_stock_all_flash.py . -o all_flash.bin
+```
+
+Nếu script hoàn tất mà không báo lỗi, file kết quả sẽ là:
+
+```text
+all_flash.bin
+```
+
+> [!WARNING]
+> `all_flash.bin` chỉ nên được tạo từ **backup đúng của thiết bị/revision tương ứng**. Không nên flash file của máy khác khi chưa biết rõ partition layout, calibration data và dữ liệu riêng của thiết bị.
+
+---
+
+## 🔗 Tài liệu tham khảo
+
+- [voz188/openwrt-xsw050ns](https://github.com/voz188/openwrt-xsw050ns)
+- [ResearcherPT/vnptmodemresearch](https://github.com/ResearcherPT/vnptmodemresearch)
+- [pbs05/an758x-stock2ubi](https://github.com/pbs05/an758x-stock2ubi)
+
+---
+
+## 💬 Hỗ trợ / thảo luận
+
+Discord:
+
+👉 **https://discord.gg/5XbjNNtRFW**
+
+Nếu bạn có thêm thông tin về phần cứng, pinout, partition layout hoặc quy trình OpenWrt cho **XSW250-NS**, hãy mở **Issue / Pull Request** để cùng bổ sung tài liệu.
+
+---
+
+<p align="center">
+  <b>⚡ VNPT iGate XSW250-NS • XGS-PON • Wi-Fi 6 • OpenWrt Research ⚡</b>
+</p>
