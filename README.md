@@ -1,45 +1,40 @@
-# Hardware Specifications: xsw250ns
+# Thông số kỹ thuật phần cứng: VNPT iGate XSW250-NS (XGS-PON ONT Wi-Fi 6)
 
-This document details the core hardware components, SoCs, wireless chipset modules, flash memory, RAM, and supporting integrated circuits of the **xsw250ns** platform, including core architecture and clock frequencies.
+Tài liệu tổng hợp cấu hình phần cứng, vi xử lý trung tâm, bộ nhớ, hệ thống Wi-Fi 6 và các chip giao tiếp ngoại vi trên bo mạch **iGate XSW250-NS**.
 
 ---
 
-## Architecture & Core Processing
+## 1. Vi xử lý trung tâm (Main SoC)
 
-| Component / Function | Part Number / IC Model | Architecture / Cores & Clock Speed | Manufacturer / Notes |
+| Thành phần | Mã Chip | Cấu trúc nhân / Xung nhịp & Chức năng | Hãng sản xuất |
 | :--- | :--- | :--- | :--- |
-| **Main SoC (Gateway/Router)** | `EN7573AN` | **Multi-core ARM/MIPS** *(Standard networking SoC architecture)* | Econet |
-| **Co-Processor / Companion SoC** | `AN7581CT` | **Quad-Core ARM CPU + 8-Core RISC-V Network Processor** | Airoha *(10G-PON / High-performance Gateway SoC)* |
+| **Main XGS-PON SoC** | `AN7581CT` | **4 nhân ARM Cortex-A53 + 8 nhân RISC-V NPU** (Xử lý trung tâm, 10G XGS-PON MAC, tích hợp Switch Gigabit & tăng tốc phần cứng gói tin) | Airoha |
 
 ---
 
-## Memory & Storage
+## 2. Bộ nhớ & Lưu trữ (Memory & Storage)
 
-| Component | Part Number / IC Model | Capacity / Specification | Manufacturer |
+| Thành phần | Mã Chip | Dung lượng & Thông số kỹ thuật | Hãng sản xuất |
 | :--- | :--- | :--- | :--- |
-| **NAND Flash Memory** | `WINBOND 25N02KVZEIR` | **2Gb (256MB)** Serial SLC NAND Flash | Winbond |
-| **System RAM (DRAM)** | `WINBOND W664GG6RB` | **512MB** DDR3 SDRAM | Winbond |
+| **RAM hệ thống** | `W664GG6RB-06` | **512MB (4Gb) DDR4-3200** (Xung nhịp thực 1600 MHz / 3200 MT/s, cấu trúc 256M × 16, 1.2V) | Winbond |
+| **Bộ nhớ Flash** | `25N02KVZEIR` | **256MB (2Gb) Serial SLC NAND Flash** (Giao tiếp SPI/QSPI 104 MHz, tích hợp 8-bit ECC) | Winbond |
 
 ---
 
-## Wireless & RF Subsystem (Wi-Fi)
+## 3. Hệ thống Wi-Fi 6 (Wireless AX3000 - Filogic 630)
 
-| Wireless Band / Standard | Chipset Model | Architecture / Processing Units | Manufacturer |
+| Vai trò trong cụm Wi-Fi | Mã Chip | Cấu trúc & Thông số kỹ thuật | Hãng sản xuất |
 | :--- | :--- | :--- | :--- |
-| **Wi-Fi 6 (802.11ax) - Dual-band** | `MT7976DN` + `MT7916AN` | **MT7916AN** (Baseband Processor / MAC) + **MT7976DN** (RF Transceiver / PA/LNA integration) | MediaTek |
+| **Wi-Fi 6 Baseband / MAC** | `MT7916AN` | **Chip xử lý băng tần cơ sở (MAC/BBP)** tích hợp 32-bit RISC MCU, giao tiếp PCIe, chuẩn AX3000 (2×2 2.4GHz + 3×3/2×2 5GHz, 160MHz) | MediaTek |
+| **Wi-Fi 6 RF Transceiver** | `MT7976DN` | **Chip thu phát vô tuyến (RF Front-End)** băng tần kép 2.4GHz (2T2R) + 5GHz (3T3R), tích hợp sẵn bộ khuếch đại iPA / iLNA | MediaTek |
 
 ---
 
-## Ethernet, PHY & Power/Interface Management
+## 4. Mạng Ethernet, Thoại (VoIP/FXS) & Quang học (PON)
 
-| Component Type | Part Number / Model | Function & Core Specs | Manufacturer |
+| Thành phần | Mã Chip | Thông số & Chức năng thực tế | Hãng sản xuất |
 | :--- | :--- | :--- | :--- |
-| **Ethernet Transceiver (PHY)** | `AIROHA EN8811HN` | High-performance single-port GbE PHY transceiver | Airoha |
-| **Voice / SLIC Subsystem** | `MSL SLLV5-SH8SQ.19` | Subscriber Line Interface Circuit (VoIP / Telephony control) | MSL |
-| **Power Management / Switch ICs** | `2x P61089B-2525` | Dual power management / load switching regulators | — |
-
----
-
-## Firmware & Compilation Notes
-- **Toolchain / SDK:** Econet / Airoha SDK for EN7573 / AN7581 platforms.
-- **Bootloader:** U-Boot customized for Econet/Airoha architecture with SPI/NAND flash support.
+| **2.5GbE Ethernet PHY** | `EN8811HN` | **Single-port 2.5GBASE-T PHY** (Điều khiển cổng mạng LAN/WAN 2.5Gbps; 4 cổng 1Gbps còn lại nối trực tiếp vào Switch nội của SoC AN7581CT) | Airoha |
+| **Dual-Port VoIP SLIC** | `SLLV5-SH8SQ.19` | **Dual-Channel Voice SLIC + CODEC (`PEF32002`)** điều khiển trực tiếp **2 cổng điện thoại bàn (2x FXS / RJ11)** | MaxLinear (Lantiq) |
+| **Bảo vệ quá áp cổng Tel** | `2x P61089B` | **2x Dual Programmable Thyristor Surge Suppressor (170V, SOP-8)** — Mạch bảo vệ chống sét/quá áp đường dây cho 2 cổng Tel (SLIC protection) | YAGEO / ST |
+| **XGS-PON Laser Driver** | `EN7573AN` | **10G-PON / XGS-PON BOSA Driver** (IC điều khiển công suất thu phát mắt quang 10G đối xứng) | EcoNet |
