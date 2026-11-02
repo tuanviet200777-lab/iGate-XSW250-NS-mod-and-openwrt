@@ -43,11 +43,11 @@
 | **Main SoC** | Airoha `AN7581CT` |
 | **RAM** | 512 MB DDR4 |
 | **NAND Flash** | 256 MB SLC NAND |
-| **Ethernet nổi bật** | 1 × 2.5GbE PHY + các cổng Gigabit qua switch nội SoC |
+| **Ethernet nổi bật** | 1 × 2.5GbE PHY + 4 x 1GbE qua switch nội SoC |
 | **VoIP** | 2 × FXS / RJ11 |
 
 > [!IMPORTANT]
-> Các thông số bên dưới được tổng hợp theo quá trình nghiên cứu thiết bị và nội dung README gốc của repo. Nếu bạn phát hiện sai khác giữa các revision phần cứng, hãy mở Issue/PR để bổ sung.
+> Các thông số bên dưới được tổng hợp theo quá trình nghiên cứu thiết bị V3. Nếu bạn phát hiện sai khác giữa các revision phần cứng, hãy mở Issue/PR để bổ sung.
 
 ---
 
@@ -63,7 +63,7 @@
 
 | Thành phần | Mã chip | Dung lượng / thông số | Hãng |
 |---|---|---|---|
-| **RAM hệ thống** | `W664GG6RB-06` | **512 MB (4 Gb) DDR4-2666**; 1333 MHz / 2666 MT/s, cấu trúc 256M × 16, 1.2 V. README gốc có ghi chú: *khóa ở 3200 MHz* | Winbond |
+| **RAM hệ thống** | `W664GG6RB-06` | **512 MB (4 Gb) DDR4-2666**; 1333 MHz / 2666 MT/s, cấu trúc 256M × 16, 1.2 V. *khóa 3200 MHz* | Winbond |
 | **NAND Flash** | `25N02KVZEIR` | **256 MB (2 Gb) Serial SLC NAND Flash**; SPI/QSPI 104 MHz, tích hợp ECC 8-bit | Winbond |
 
 ---
@@ -95,10 +95,8 @@
 - **Tera Term / terminal UART**
 - **Tftpd32**
 - **Python 3**
-- Thư viện Python: `pycryptodome`
 - Tool `xgs_romfile.py`
 - Tool `an758x-stock2ubi`
-- Script `build_stock_all_flash.py`
 
 Cài thư viện cần thiết:
 
@@ -141,10 +139,7 @@ python xgs_romfile.py keys --sn <XPON_SN> -o keys
 Kiểm tra thư mục/file output `keys` do tool tạo ra.
 
 - Username Linux theo README gốc: `admin`
-- Thông tin đăng nhập U-Boot: **không nên commit mật khẩu plaintext lên GitHub public**.
-
-> [!CAUTION]
-> Nếu repo của bạn là public, hãy tránh đưa mật khẩu, serial riêng của thiết bị, key hoặc dữ liệu backup cá nhân vào commit.
+- Thông tin đăng nhập U-Boot: đọc thông tin trong linux sẽ .
 
 ---
 
