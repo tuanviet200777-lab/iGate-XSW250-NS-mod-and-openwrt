@@ -55,7 +55,7 @@ Hướng dẫn lấy pass : cài puthon và thư viện ( python -m pip install 
 
 2.Vào vnptmodemresearch tải tool xgs_romfile.py để trong cùng 1 thư mục
 
-3.Mở cmd chạy ( python xgs050_romfile.py keys --sn (xponsn) -o keys )    // có thể xem xponsn ở web debug or sau router.
+3.Mở cmd chạy ( python xgs_romfile.py keys --sn (xponsn) -o keys )    // có thể xem xponsn ở web debug or sau router.
 
 4.Xem key ở dd. (username là admin)
 
