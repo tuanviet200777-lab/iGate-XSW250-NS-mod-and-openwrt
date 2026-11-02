@@ -48,11 +48,15 @@ Hỏi chi tiết: https://discord.gg/5XbjNNtRFW
 0.Lấy pass uart
 1.Cách lấy mật khẩu uart xem : ( https://github.com/ResearcherPT/vnptmodemresearch ) 
 
-Hướng dẫn lấy pass : 
+Hướng dẫn lấy pass : cài puthon và thư viện ( python -m pip install pycryptodome ) 
 
 1.Vào web fw gốc vào mục backup tải file romfile.cfg
 
-2.Vào 
+2.Vào vnptmodemresearch tải tool xgs_romfile.py để trong cùng 1 thư mục
+
+3.Mở cmd chạy ( python xgs050_romfile.py keys --sn (xponsn) -o keys )    // có thể xem xponsn ở web debug or sau router.
+
+4.Xem key ở dd. (Tên là admin)
 
 ---
 
