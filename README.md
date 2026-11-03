@@ -193,7 +193,7 @@ Chú ý không được nhấn next sang trang sau để upload uboot và preloa
 
 ---
 
-## 📦 Tạo file `all_flash.bin`   (beta chưa test py)
+## 📦 Tạo file `all_flash.bin` 
 
 Sau khi đã có các file `mtd*` backup:
 
