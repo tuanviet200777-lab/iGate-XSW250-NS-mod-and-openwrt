@@ -1,1 +1,16 @@
+Hướng dẫn mod thêm :
 
+Băt buộc phải mở nắm soc để có thể truyền dữ liệu
+
+noob player:
+Cần mua 
+-có các công cụ để hàn
+-USB-65 ( https://shopee.vn/10-Chi%E1%BA%BFc-USB-Lo%E1%BA%A1i-A-B-2.0-3.0-C%E1%BB%95ng-Ti%C3%AAu-Chu%E1%BA%A9n-Nam-C%E1%BA%AFm-N%E1%BB%AF-H%C3%A0n-Jack-K%E1%BA%BFt-N%E1%BB%91i-PCB-%E1%BB%94-C%E1%BA%AFm-i.1612794285.29990128180 )
+-bột hàn 
+-UR1 1MeG
+-UC1 4.7n
+-UC2 10u
+-UC3 100n
+cÒN LẠI : UR2,UR3 nối lại bằng bột hàn
+
+pro player làm như 
