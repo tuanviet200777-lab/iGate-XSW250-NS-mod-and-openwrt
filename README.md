@@ -189,6 +189,8 @@ http://192.168.1.1:3333/
 
 Lưu các partition/MTD cần thiết ở nơi an toàn trước khi tiếp tục chỉnh sửa firmware.
 
+Chú ý không được nhấn next sang trang sau để upload uboot và preloader
+
 ---
 
 ## 📦 Tạo file `all_flash.bin`   (beta chưa test py)
