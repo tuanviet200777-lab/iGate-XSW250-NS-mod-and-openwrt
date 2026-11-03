@@ -140,7 +140,7 @@ python xgs_romfile.py keys --sn <XPON_SN> -o keys
 Kiểm tra thư mục/file output `keys` do tool tạo ra.
 
 - Username Linux theo README gốc: `admin`
-- Thông tin đăng nhập U-Boot: đọc thông tin trong linux sẽ có.
+- Thông tin đăng nhập U-Boot: ` cat /proc/cmdline `
 
 ---
 
