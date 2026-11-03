@@ -28,6 +28,7 @@
 - [🔐 Lấy thông tin đăng nhập UART](#-lấy-thông-tin-đăng-nhập-uart)
 - [🛟 Backup firmware gốc](#-backup-firmware-gốc)
 - [📦 Tạo file `all_flash.bin`](#-tạo-file-all_flashbin)
+- [    Cài đặt theo cấu trúc U-Boot của OpenWrt](#-Cài-đặt-theo-cấu-trúc-U-Boot-của-OpenWrt)
 - [🔗 Tài liệu tham khảo](#-tài-liệu-tham-khảo)
 - [💬 Hỗ trợ / thảo luận](#-hỗ-trợ--thảo-luận)
 
@@ -190,7 +191,7 @@ Lưu các partition/MTD cần thiết ở nơi an toàn trước khi tiếp tụ
 
 ---
 
-## 📦 Tạo file `all_flash.bin`
+## 📦 Tạo file `all_flash.bin`   (beta chưa test py)
 
 Sau khi đã có các file `mtd*` backup:
 
@@ -234,6 +235,46 @@ all_flash.bin
 > `all_flash.bin` chỉ nên được tạo từ **backup đúng của thiết bị/revision tương ứng**. Không nên flash file của máy khác khi chưa biết rõ partition layout, calibration data và dữ liệu riêng của thiết bị.
 
 ---
+
+## Cài đặt theo cấu trúc U-Boot của OpenWrt
+
+Đặt các file ảnh OpenWrt lên TFTP server (IP lAN PC: 192.168.1.254): 
+
+```text
+openwrt-airoha-an7581-vnpt_xsw-050ns-bl31-uboot.fip
+openwrt-airoha-an7581-vnpt_xsw-050ns-initramfs-recovery.itb
+openwrt-airoha-an7581-vnpt_xsw-050ns-preloader.bin
+```
+
+Kết nối cổng serial console và mở Tera Term trên Windows, thiết lập tốc độ 115200 baud
+
+Giữ (hold) nút Reset (nằm trong lỗ nhỏ trên vỏ máy) và cắm nguồn để vào chế độ recovery
+
+Nhấn phím x trong terminal, sau đó vào File → Transfer → XMODEM → Send
+
+Chọn file BL2
+
+```text
+openwrt-airoha-an7581-vnpt_xsw-250ns-preloader.bin
+```
+
+Chờ đến khi file được truyền xong và thấy dòng nhắc sau xuất hiện
+
+```text
+Press x to load BL31 + U-Boot FIP
+```
+
+Nhấn phím x trong terminal, sau đó vào File → Transfer → XMODEM → Send
+
+```text
+openwrt-airoha-an7581-vnpt_xsw-250ns-bl31-uboot.fip
+```
+
+Sau khi vào uboot nhấn nhanh nút xuống chọn mục `5. Load BL31+U-Boot FIP via TFTP then write to ` 
+
+xong đó chọn mục `6. Load BL2 preloader via TFTP then write to `
+
+xong reset thử lên uboot openwrt
 
 ## 🔗 Tài liệu tham khảo
 
