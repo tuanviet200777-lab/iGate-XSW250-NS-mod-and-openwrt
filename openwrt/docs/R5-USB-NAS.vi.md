@@ -8,7 +8,15 @@ Gói `kmod-usb3` có tên như vậy vì AN7581 dùng bộ điều khiển xHCI/
 
 NAS dùng Samba4 userspace và LuCI. Mặc định chỉ bind LAN, SMB2.1 đến SMB3.1.1, không SMB1/NTLMv1, không mật khẩu rỗng hoặc tự hạ thành guest; chưa có thư mục chia sẻ và dịch vụ chưa bật tự khởi động. Không mở cổng NAS từ WAN. Không có mật khẩu NAS dùng chung trong firmware.
 
-Sau khi kiểm tra USB nhận đúng: vào System → Mount Points, chọn partition theo UUID và đặt điểm gắn `/mnt/...`; không bật tự định dạng. Tạo tài khoản NAS và mật khẩu riêng qua SSH (`groupadd nas`, `useradd -M -g nas -s /bin/false nas`, rồi `smbpasswd -a nas`), cấp quyền thư mục cho tài khoản đó. Xác nhận ổ đã mount trước khi tạo thư mục để tránh vô tình ghi dữ liệu vào NAND. Sau đó vào Services → Network Shares, tạo share đúng điểm gắn, giới hạn người dùng, tắt guest và force-root; bật Samba tại System → Startup. Firmware không tự tạo user hay mật khẩu thay bạn. Ổ dùng chủ yếu cho NAS nên chọn ext4; exFAT/NTFS/FAT có sẵn cho ổ dùng cùng Windows.
+Sau khi kiểm tra USB nhận đúng, cấu hình NAS theo thứ tự:
+
+1. Vào System → Mount Points, chọn partition theo UUID và đặt điểm gắn `/mnt/...`; không tự định dạng ổ. Xác nhận ổ đã mount trước khi tạo thư mục để tránh ghi nhầm vào NAND.
+2. Tạo tài khoản riêng qua SSH: `groupadd nas`, rồi `useradd -M -g nas -s /bin/false nas`. Cấp quyền thư mục trên ổ cho tài khoản đó. Với ext4 có thể dùng quyền Unix; filesystem dùng cùng Windows cần tùy chọn quyền mount phù hợp.
+3. Vào Services → Network Shares, tạo share đúng điểm gắn, đặt người dùng hợp lệ là `nas`, tắt guest và force-root. Chọn chỉ đọc hoặc đọc/ghi theo nhu cầu.
+4. Chạy `/etc/init.d/samba4 start` để sinh `/etc/samba/smb.conf`, sau đó mới chạy `smbpasswd -a nas` và nhập mật khẩu riêng. Template dùng backend `smbpasswd`; tạo mật khẩu khi chưa có cấu hình có thể dùng backend mặc định khác. Không đưa mật khẩu trực tiếp vào dòng lệnh.
+5. Chạy `/etc/init.d/samba4 restart`, kiểm tra truy cập từ máy trong LAN. Khi đã hoạt động, bật tự khởi động Samba trong System → Startup. Thử đọc/ghi và so checksum trước khi đưa dữ liệu chính vào.
+
+Firmware không tự tạo user hay mật khẩu. Ổ chủ yếu dùng cho NAS nên chọn ext4; exFAT/NTFS/FAT có sẵn cho ổ dùng cùng Windows. Các bước trên là cấu hình trên router sau khi đã nhận ổ, không phải thao tác flash bootloader.
 
 Phần bảo mật kế thừa bản vá FIFO gây treo diagnostics và giới hạn API cổng 2.5G để không lộ cấu hình VPN. LED trạng thái đọc qua RPC có phạm vi cố định. Startup không chạy kiểm tra sống của từng init script khi chỉ cần danh sách bật/tắt. OpenVPN lên 2.7.8 để bao gồm bản vá CVE-2026-84790.
 
