@@ -1,0 +1,139 @@
+{
+  "repository": "tuanviet200777-lab/immortalwrt",
+  "base_commit": "e695009c15c623f4f6a83376b505faaf7a4ae5b5",
+  "feed_commits": {
+    "packages": "0a5212e0b37c019df5a152553e571378ec6c5dcc",
+    "luci": "05c955f0aca2f5e8de1c126b0ec9e9e677e83b3f",
+    "routing": "4b9891b9136259f93294a424507ed24c5e8c1cbd",
+    "telephony": "67281dfcb4f2beee48af0cbf689a71d96f3ce339",
+    "video": "e7c09fa7d264039622f8cfab25e6a1eee651c3ea"
+  },
+  "reference_repositories": {
+    "voz188/ponwrt": "c3b518baec8ed0cc5a353327fa154f38bde1e6c0",
+    "voz188/openwrt-xsw050ns": "e20e12bed88d264e7926f365191008c096a8268c"
+  },
+  "fixes": [
+    "MT7916 EEPROM attached to main endpoint behind PCI bridge",
+    "External PHY reset GPIO27 and delays from known-working 050 image",
+    "PCS calibration zero-divisor guard and link register fixes",
+    "PPE external SerDes NBQ selection",
+    "Wi-Fi shared ucode readable by network user",
+    "CPU thermal phandle argument count fixed",
+    "Internal LAN PHY LED muxes and netdev triggers",
+    "UBI env reader configured before fw_loadenv",
+    "Watchdog core heartbeat handles procd 30-second timeout"
+  ],
+  "board": "vnpt,xsw250ns-ubi",
+  "kernel": "6.18.55",
+  "build_exit_status": 0,
+  "features": [
+    "LuCI HTTPS + Vietnamese + APK manager",
+    "WireGuard",
+    "OpenVPN netifd/LuCI",
+    "PBR",
+    "SQM/CAKE",
+    "DDNS",
+    "nlbwmon",
+    "full wpad-mbedtls",
+    "LAN/WAN 2.5GE control at bottom of LuCI Overview",
+    "Hotfix & AI in LuCI with optional OpenAI/Gemini API and reviewed UCI fixes"
+  ],
+  "default_network": {
+    "lan": [
+      "lan1",
+      "lan2",
+      "lan3",
+      "lan4"
+    ],
+    "wan": "lan2p5",
+    "wan_protocol": "dhcp",
+    "lan_address": "192.168.1.1",
+    "port_role_configurable_in_luci": true
+  },
+  "hardware_boot_tested": false,
+  "predecessor_hardware_observations": {
+    "source": "user supplied teraterm.log; SHA256 recorded in LOG-UART-FIX.md",
+    "recovery_boots_to_shell": true,
+    "luci_access_confirmed_by_user": true,
+    "four_LAN_ports_link_at_1G": true,
+    "external_2p5_port_link_at_1G": true,
+    "two_radio_interfaces_created": true,
+    "hardware_fix_retest_pending": true
+  },
+  "limitations": [
+    "PON/TEL not supported",
+    "USB not enabled or verified",
+    "New fixes need hardware retest; link-up alone does not verify Ethernet/Wi-Fi traffic",
+    "CPU frequency read failure in uploaded log remains unresolved",
+    "OEM U-Boot 2014 in log: unattended boot of UBI sysupgrade is not verified",
+    "Factory Ethernet MAC source is not established; random fallback remains",
+    "MAC/NAND/persistence/VPN need hardware tests",
+    "Recovery runs in RAM; permanent configuration requires installed sysupgrade",
+    "Public rolling feeds are not pinned to this custom kernel"
+  ],
+  "overview_port_switch_vm_tested": true,
+  "overview_port_switch": {
+    "location": "last card on Status / Overview",
+    "port": "lan2p5",
+    "roles": [
+      "LAN",
+      "WAN"
+    ],
+    "apply": "standard LuCI checked apply / rollback",
+    "wan_configuration_preserved": true,
+    "advanced_vlan_configuration": "requires Network / Interfaces"
+  },
+  "files": [
+    {
+      "name": "openwrt-airoha-an7581-vnpt_xsw250ns-ubi-initramfs-recovery.itb",
+      "bytes": 13762560,
+      "sha256": "84243461e3867b853fa87aa80e0a20b156997542494d772e55cf7344a88f0671"
+    },
+    {
+      "name": "openwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb",
+      "bytes": 15937814,
+      "sha256": "a4f0d871c753338a10e2eac776a8b7a6880a33c5d875f9121f9beafde44d9fee"
+    }
+  ],
+  "time_fix": {
+    "boot_clock_floor": true,
+    "shutdown_checkpoint": true,
+    "timezone": "Asia/Ho_Chi_Minh",
+    "ntp_enabled": true,
+    "jailed_ntp_vm_tested": true,
+    "hardware_tested": false
+  },
+  "apk_feed_fix": {
+    "disabled_feed": "video",
+    "reason": "official index HTTP 404",
+    "remaining_feeds_verified": 6,
+    "signed_index_packages": 10159
+  },
+  "led_status": {
+    "GPIOs": {
+      "wifi2g": 15,
+      "wifi5g": 41,
+      "tel1": 24,
+      "tel2": 33
+    },
+    "source": "stock 7581ptled.conf selected in user original UART",
+    "temp_on": 100,
+    "temp_off": 95,
+    "TEL2": "ICMP reachability / route / off",
+    "hardware_tested": false,
+    "idle_link_flap_fixed": false
+  },
+  "hotfix": {
+    "version": "xsw250ns-hotfix-20261029-r3",
+    "path": "System / Hotfix & AI",
+    "rollback_seconds": 120,
+    "openai_endpoint": "https://api.openai.com/v1/responses",
+    "gemini_endpoint": "https://generativelanguage.googleapis.com/v1beta/models/<model>:generateContent",
+    "separate_provider_keys": true,
+    "api_key_embedded": false,
+    "automatic_shell_execution": false,
+    "api_mock_tested": true,
+    "live_api_key_tested": false,
+    "hardware_tested": false
+  }
+}

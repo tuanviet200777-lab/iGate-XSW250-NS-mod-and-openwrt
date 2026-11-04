@@ -1,0 +1,18 @@
+{
+  "metadata_preserved": true,
+  "fit_rootfs_hashes_updated": 2,
+  "bytes": 16007446,
+  "sha256": "5c0a9cc947a4cbbb176e74d0f1694b6718662ebe3e87a7dbe1ddf2b0ca830b77",
+  "unchanged_files_and_metadata": 1628,
+  "changed_or_added_paths": [
+    "etc/board.d/04_xsw250ns_ubootenv",
+    "etc/fw_env.config",
+    "etc/xsw250ns-build-id",
+    "etc/xsw250ns-nand-fix.json"
+  ],
+  "hardware_tested": false,
+  "kernel_recompiled": false,
+  "base_sysupgrade_sha256": "a4f0d871c753338a10e2eac776a8b7a6880a33c5d875f9121f9beafde44d9fee",
+  "kernel_and_dtb_byte_identical": true,
+  "root_directory_metadata_and_hardlinks_preserved": true
+}

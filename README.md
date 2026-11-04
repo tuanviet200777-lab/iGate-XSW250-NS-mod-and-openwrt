@@ -1,5 +1,9 @@
 # 🚀 VNPT iGate XSW250-NS — OpenWrt & Hardware Notes
 
+> **Nguồn build và bản sửa NAND/preinit:** xem [openwrt/README.md](openwrt/README.md) và [kế hoạch Codex cloud](openwrt/CLOUD-TASK.md). Bộ nguồn được ghim commit/feeds, có patch r3-nand1 và checker xác minh `/rom`. Bản sửa vẫn cần kiểm chứng boot trên thiết bị thật.
+>
+> Các bước nạp BL2/FIP bên dưới là ghi chép chuyển đổi bootloader từ firmware hãng. Máy đã chạy U-Boot UBI 2026 không cần nạp lại BL2/FIP để sửa lỗi script preinit. Gói add-on chỉ ghi overlay đã bị thu hồi cho lỗi này.
+
 <p align="center">
   <img src="https://img.shields.io/badge/Device-VNPT%20iGate%20XSW250--NS-blue?style=for-the-badge" alt="Device">
   <img src="https://img.shields.io/badge/PON-XGS--PON-orange?style=for-the-badge" alt="XGS-PON">
@@ -243,9 +247,9 @@ all_flash.bin
 Đặt các file ảnh OpenWrt lên TFTP server (IP lAN PC: 192.168.1.254): 
 
 ```text
-openwrt-airoha-an7581-vnpt_xsw-050ns-bl31-uboot.fip
-openwrt-airoha-an7581-vnpt_xsw-050ns-initramfs-recovery.itb
-openwrt-airoha-an7581-vnpt_xsw-050ns-preloader.bin
+openwrt-airoha-an7581-vnpt_xsw250ns-ubi-bl31-uboot.fip
+openwrt-airoha-an7581-vnpt_xsw250ns-ubi-initramfs-recovery.itb
+openwrt-airoha-an7581-vnpt_xsw250ns-ubi-preloader.bin
 ```
 
 Kết nối cổng serial console và mở Tera Term trên Windows, thiết lập tốc độ 115200 baud
@@ -257,7 +261,7 @@ Nhấn phím x trong terminal, sau đó vào File → Transfer → XMODEM → Se
 Chọn file BL2
 
 ```text
-openwrt-airoha-an7581-vnpt_xsw-250ns-preloader.bin
+openwrt-airoha-an7581-vnpt_xsw250ns-ubi-preloader.bin
 ```
 
 Chờ đến khi file được truyền xong và thấy dòng nhắc sau xuất hiện
@@ -269,7 +273,7 @@ Press x to load BL31 + U-Boot FIP
 Nhấn phím x trong terminal, sau đó vào File → Transfer → XMODEM → Send
 
 ```text
-openwrt-airoha-an7581-vnpt_xsw-250ns-bl31-uboot.fip
+openwrt-airoha-an7581-vnpt_xsw250ns-ubi-bl31-uboot.fip
 ```
 
 Sau khi vào uboot nhấn nhanh nút xuống chọn mục `5. Load BL31+U-Boot FIP via TFTP then write to ` 
