@@ -5,8 +5,10 @@ folder=pathlib.Path(sys.argv[1]);out=pathlib.Path(sys.argv[2]);out.mkdir(parents
 spec=importlib.util.spec_from_file_location('fit',pathlib.Path(__file__).with_name('verify-fit.py'))
 fit=importlib.util.module_from_spec(spec);spec.loader.exec_module(fit)
 images=list(folder.glob('*xsw250ns*sysupgrade.itb'))
+recoveries=list(folder.glob('*xsw250ns*recovery.itb'))
 assert len(images)==1,images
-for image in images+list(folder.glob('*xsw250ns*recovery.itb')):fit.verify(image)
+assert len(recoveries)==1,('expected one recovery image',recoveries)
+for image in images+recoveries:fit.verify(image)
 data=images[0].read_bytes();nodes,_=fit.parse(data);node=nodes['/images/rootfs-1']
 offset=int.from_bytes(node['data-position'],'big');size=int.from_bytes(node['data-size'],'big')
 squash=out/'rootfs.squashfs';squash.write_bytes(data[offset:offset+size])

@@ -2,13 +2,13 @@
 
 The current native profile is `xsw250ns-20261104-r5-usb-nas`; use `patches/xsw250ns-support-r5-usb-nas.patch` and the accompanying OpenVPN feed update. See [USB/NAS scope and validation limits](docs/R5-USB-NAS.vi.md). The r4 evidence below remains historical: it does not certify the new USB/NAS build. GitHub Actions compiles the kernel, matching USB modules and userland, then checks the contents of the actual image. A successful build is still not a physical USB test.
 
-Current build ID: `xsw250ns-20261104-r4-diag-nand1`. The old AI/API-key/chat and JSON hotfix feature has been removed, including its worker, policy module, write ACL, RPC endpoints and S18 recovery service. LuCI **System → Chẩn đoán hệ thống** now collects six detailed read-only groups on demand, with findings and JSON export. See [Vietnamese guide](docs/DIAGNOSTICS.vi.md). MAC/IP remain in the report; review it before sharing.
+Historical r4 build ID: `xsw250ns-20261104-r4-diag-nand1`. The old AI/API-key/chat and JSON hotfix feature has been removed, including its worker, policy module, write ACL, RPC endpoints and S18 recovery service. LuCI **System → Chẩn đoán hệ thống** now collects six detailed read-only groups on demand, with findings and JSON export. See [Vietnamese guide](docs/DIAGNOSTICS.vi.md). MAC/IP remain in the report; review it before sharing.
 
 This directory supplies the source changes for `vnpt,xsw250ns-ubi`. It is a board port on ImmortalWrt, not an upstream-supported OpenWrt device profile.
 
 - Base: `tuanviet200777-lab/immortalwrt` at `e695009c15c623f4f6a83376b505faaf7a4ae5b5`.
 - Target: `airoha/an7581`, kernel 6.18.55, MT7916, EN8811H, four LAN ports plus a 2.5G port.
-- Full board patch: `patches/xsw250ns-support-r4-diag.patch` (apply once to the pinned base).
+- Current full board patch: `patches/xsw250ns-support-r5-usb-nas.patch` (apply once to the pinned base); `prepare-build.sh` also applies the OpenVPN feed patch.
 - Build config and all five feed revisions: `config/`.
 - Prior results: `evidence/`; these distinguish static/MSYS checks from hardware observations.
 
@@ -49,6 +49,7 @@ Choose concurrency for available RAM. Stop on a failed step; use `make -j1 V=s` 
 ```bash
 python3 openwrt/tests/test_reader.py
 python3 openwrt/tests/test_rom_checker.py
+python3 openwrt/tests/test_fit_import.py
 python3 openwrt/scripts/verify-fit.py /path/to/recovery.itb /path/to/sysupgrade.itb
 ```
 

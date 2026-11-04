@@ -29,6 +29,10 @@ cd "$build_dir"
 ./scripts/feeds install -a
 git -C feeds/packages apply --check "$kit_dir/patches/openvpn-2.7.8.patch"
 git -C feeds/packages apply "$kit_dir/patches/openvpn-2.7.8.patch"
+git -C feeds/packages apply --check "$kit_dir/patches/samba4-xsw250ns-defaults.patch"
+git -C feeds/packages apply "$kit_dir/patches/samba4-xsw250ns-defaults.patch"
+git -C feeds/luci apply --check "$kit_dir/patches/luci-xsw250ns-startup.patch"
+git -C feeds/luci apply "$kit_dir/patches/luci-xsw250ns-startup.patch"
 make defconfig
 
 python3 - "$kit_dir/evidence/base-r3-build-manifest.json" <<'PY'

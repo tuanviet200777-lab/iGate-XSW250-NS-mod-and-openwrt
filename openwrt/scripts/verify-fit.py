@@ -91,4 +91,6 @@ def verify(path):
         assert count>0,'recovery is missing embedded init/busybox CPIO'
         print(path.name+': embedded recovery CPIO verified, '+str(count)+' entries')
     print(path.name+': FIT config, board DTB, ARM64 kernel and payload integrity verified; SHA256 '+hashlib.sha256(blob).hexdigest())
-for arg in sys.argv[1:]:verify(Path(arg))
+if __name__ == '__main__':
+    for arg in sys.argv[1:]:
+        verify(Path(arg))

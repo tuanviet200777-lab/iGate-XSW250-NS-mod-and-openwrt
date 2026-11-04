@@ -1,4 +1,6 @@
-# Cloud continuation: XSW250-NS r4 diagnostics-only native build
+# Cloud continuation: XSW250-NS r5 USB2/NAS native build
+
+Current source is r5: use `scripts/prepare-build.sh`, which applies `patches/xsw250ns-support-r5-usb-nas.patch`, pins feeds and applies the OpenVPN, Samba defaults and LuCI Startup feed patches. Read `docs/BUILD-R5.vi.md` and `docs/R5-USB-NAS.vi.md`. Keep LuCI/Samba-owned files out of board base-files to avoid APK ownership conflicts. The r4 description and evidence below are historical context; do not apply the old full patch on top of r5.
 
 ## Objective
 
