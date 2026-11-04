@@ -1,0 +1,6 @@
+{
+  "dedicated_role": "read-only luci-xsw250ns-port plus standard LuCI bootstrap",
+  "synthetic_vpn_private_key_exposed_by_uci_get": true,
+  "real_credentials_used": false,
+  "physical_router_accessed": false
+}

@@ -1,0 +1,128 @@
+[
+  {
+    "name": "legacy FIFO cannot block diagnostics",
+    "passed": true,
+    "details": 2.846
+  },
+  {
+    "name": "legacy temporary FIFO cannot block status daemon",
+    "passed": true
+  },
+  {
+    "name": "runtime status owned by root with mode 0600",
+    "passed": true
+  },
+  {
+    "name": "nobody cannot create protected status file",
+    "passed": true
+  },
+  {
+    "name": "unexpected root-owned FIFO rejected without blocking",
+    "passed": true
+  },
+  {
+    "name": "status reader rejects symlinks",
+    "passed": true
+  },
+  {
+    "name": "status writer rejects unexpected temporary FIFO",
+    "passed": true
+  },
+  {
+    "name": "LED role can read scoped runtime status RPC",
+    "passed": true,
+    "details": 0
+  },
+  {
+    "name": "LED role cannot read arbitrary files",
+    "passed": true
+  },
+  {
+    "name": "dedicated port role cannot read complete network config",
+    "passed": true
+  },
+  {
+    "name": "dedicated port status excludes synthetic VPN key",
+    "passed": true
+  },
+  {
+    "name": "dedicated port read role cannot mutate network config",
+    "passed": true
+  },
+  {
+    "name": "diagnostic group remains functional: system",
+    "passed": true
+  },
+  {
+    "name": "diagnostic group remains functional: storage",
+    "passed": true
+  },
+  {
+    "name": "diagnostic group remains functional: ports",
+    "passed": true
+  },
+  {
+    "name": "diagnostic group remains functional: wireless",
+    "passed": true
+  },
+  {
+    "name": "diagnostic group remains functional: services",
+    "passed": true
+  },
+  {
+    "name": "diagnostic group remains functional: logs",
+    "passed": true
+  },
+  {
+    "name": "invalid group rejected: 'system; touch /tmp/qa-injected'",
+    "passed": true
+  },
+  {
+    "name": "invalid group rejected: '$(touch /tmp/qa-injected)'",
+    "passed": true
+  },
+  {
+    "name": "invalid group rejected: '../../etc/shadow'",
+    "passed": true
+  },
+  {
+    "name": "invalid group rejected: '/etc/shadow'",
+    "passed": true
+  },
+  {
+    "name": "invalid group rejected: ''",
+    "passed": true
+  },
+  {
+    "name": "invalid group rejected: None",
+    "passed": true
+  },
+  {
+    "name": "invalid group rejected: {}",
+    "passed": true
+  },
+  {
+    "name": "invalid group rejected: []",
+    "passed": true
+  },
+  {
+    "name": "invalid group rejected: 123",
+    "passed": true
+  },
+  {
+    "name": "command-injection probes produced no marker",
+    "passed": true
+  },
+  {
+    "name": "unauthenticated diagnostics denied",
+    "passed": true
+  },
+  {
+    "name": "empty root password denied after administrator setup",
+    "passed": true
+  },
+  {
+    "name": "destroyed session cannot be replayed",
+    "passed": true
+  }
+]

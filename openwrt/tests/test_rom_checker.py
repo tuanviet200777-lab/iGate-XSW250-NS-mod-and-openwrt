@@ -7,6 +7,7 @@ import sys
 
 HERE=Path(__file__).resolve().parent
 ROOT=HERE.parent
+BUILD=(ROOT/'files/etc/xsw250ns-build-id').read_bytes()
 sys.path.insert(0,str(ROOT))
 from test_reader import shell_path
 
@@ -27,8 +28,8 @@ def run():
         for d in ['rom/etc/board.d','etc','tmp/sysinfo','proc','bin']:(root/d).mkdir(parents=True,exist_ok=True)
         rp=shell_path(root)
         (root/'tmp/sysinfo/board_name').write_bytes(b'vnpt,xsw250ns-ubi\n')
-        (root/'etc/xsw250ns-build-id').write_bytes(b'xsw250ns-hotfix-20261029-r3-nand1\n' if kind == 'legacy' else b'xsw250ns-20261104-r4-diag-nand1\n')
-        (root/'rom/etc/xsw250ns-build-id').write_bytes(b'xsw250ns-20261104-r4-diag-nand1\n' if fixed_rom else b'xsw250ns-hotfix-20261029-r3\n')
+        (root/'etc/xsw250ns-build-id').write_bytes(b'xsw250ns-hotfix-20261029-r3-nand1\n' if kind == 'legacy' else BUILD)
+        (root/'rom/etc/xsw250ns-build-id').write_bytes(BUILD if fixed_rom else b'xsw250ns-hotfix-20261029-r3\n')
         (root/'rom/etc/board.d/04_xsw250ns_ubootenv').write_bytes(new_hook if fixed_rom and not wrong_hook else old_hook)
         (root/'tmp/xsw250ns-fw_env.config').write_bytes(b'/dev/ubi0_0 0x0 0x1f000 0x1f000 1\n/dev/ubi0_1 0x0 0x1f000 0x1f000 1\n')
         (root/'proc/mounts').write_bytes(b'ubi0:rootfs_data /overlay ubifs rw,noatime 0 0\n/dev/fit0 /rom squashfs ro 0 0\n')

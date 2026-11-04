@@ -1,6 +1,6 @@
 # 🚀 VNPT iGate XSW250-NS — OpenWrt & Hardware Notes
 
-> **Nguồn build và bản sửa NAND/preinit:** xem [openwrt/README.md](openwrt/README.md) và [kế hoạch Codex cloud](openwrt/CLOUD-TASK.md). Bộ nguồn được ghim commit/feeds, có patch r4 chẩn đoán thuần đọc (đã gỡ AI/hotfix) và checker xác minh `/rom`. Bản sửa vẫn cần kiểm chứng boot trên thiết bị thật.
+> **Bản native đang phát triển: r5 USB2/NAS + bảo mật.** Xem [phạm vi USB/NAS và hướng dẫn](openwrt/docs/R5-USB-NAS.vi.md), [nguồn build](openwrt/README.md) và GitHub Actions. Kernel, module USB và userland được build cùng cấu hình; đã gỡ AI/hotfix, giữ bản sửa NAND/preinit và thêm bản vá phân quyền/FIFO. Evidence r4 là kết quả lịch sử, chưa xác nhận USB/NAS r5 hoặc boot trên thiết bị thật.
 >
 > Các bước nạp BL2/FIP bên dưới là ghi chép chuyển đổi bootloader từ firmware hãng. Máy đã chạy U-Boot UBI 2026 không cần nạp lại BL2/FIP để sửa lỗi script preinit. Gói add-on chỉ ghi overlay đã bị thu hồi cho lỗi này.
 

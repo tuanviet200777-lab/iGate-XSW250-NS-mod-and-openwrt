@@ -1,4 +1,6 @@
-# XSW250-NS r4: diagnostics-only LuCI and NAND preinit fix
+# XSW250-NS r5: USB2/NAS and security fixes (native build candidate)
+
+The current native profile is `xsw250ns-20261104-r5-usb-nas`; use `patches/xsw250ns-support-r5-usb-nas.patch` and the accompanying OpenVPN feed update. See [USB/NAS scope and validation limits](docs/R5-USB-NAS.vi.md). The r4 evidence below remains historical: it does not certify the new USB/NAS build. GitHub Actions compiles the kernel, matching USB modules and userland, then checks the contents of the actual image. A successful build is still not a physical USB test.
 
 Current build ID: `xsw250ns-20261104-r4-diag-nand1`. The old AI/API-key/chat and JSON hotfix feature has been removed, including its worker, policy module, write ACL, RPC endpoints and S18 recovery service. LuCI **System → Chẩn đoán hệ thống** now collects six detailed read-only groups on demand, with findings and JSON export. See [Vietnamese guide](docs/DIAGNOSTICS.vi.md). MAC/IP remain in the report; review it before sharing.
 

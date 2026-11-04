@@ -3,14 +3,19 @@
 import * as fs from 'fs';
 import { connect } from 'ubus';
 import { cursor } from 'uci';
+import { readStatus } from 'xsw250ns.state';
 
 // The RPC accepts only a group name. It never accepts commands, paths or config.
 const GROUPS = ['system', 'storage', 'ports', 'wireless', 'services', 'logs'];
 const PORTS = ['eth0', 'eth1', 'lan1', 'lan2', 'lan3', 'lan4', 'lan2p5', 'br-lan'];
 const SERVICES = ['network', 'firewall', 'dnsmasq', 'odhcpd', 'sysntpd', 'wpad',
-	'dropbear', 'uhttpd', 'rpcd', 'sqm', 'pbr', 'openvpn', 'tailscale', 'zerotier'];
+	'dropbear', 'uhttpd', 'rpcd', 'sqm', 'pbr', 'samba4', 'blockd', 'openvpn', 'tailscale', 'zerotier'];
 
 function read(path, limit) {
+	// Reject FIFO/device inputs before open(); procfs symlinks are kernel-owned.
+	let node = fs.lstat(path);
+	if (node?.type == 'link' && index(path, '/proc/') == 0) node = fs.stat(path);
+	if (node?.type != 'file') return null;
 	const f = fs.open(path, 'r');
 	if (!f) return null;
 	const value = f.read(limit ?? 8192);
@@ -118,7 +123,7 @@ function system(bus) {
 		thermal: thermal(), memory_detail: read('/proc/meminfo', 6000),
 		load_average: read('/proc/loadavg', 256), kernel_tainted: number('/proc/sys/kernel/tainted'),
 		clock: command(['/bin/date', '-Iseconds'], 128),
-		led_status: read('/tmp/xsw250ns-status.json', 3000)
+		led_status: readStatus()
 	};
 }
 
@@ -166,6 +171,8 @@ function storage() {
 	return { mtd: read('/proc/mtd', 6000), mounts: read('/proc/mounts', 12000),
 		space: command(['/bin/df', '-k', '/', '/rom', '/overlay', '/tmp'], 5000),
 		mtd_statistics: mtd, ubi_devices: devices, ubi_volumes: volumes,
+		usb_devices: command(['/usr/bin/lsusb'], 6000),
+		block_devices: command(['/sbin/block', 'info'], 6000),
 		rom_build: read('/rom/etc/xsw250ns-build-id', 256),
 		runtime_build: read('/etc/xsw250ns-build-id', 256),
 		reader_link: fs.readlink('/etc/fw_env.config'), rom_reader_link: fs.readlink('/rom/etc/fw_env.config'),

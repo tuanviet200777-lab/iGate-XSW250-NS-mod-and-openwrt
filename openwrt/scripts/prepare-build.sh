@@ -20,13 +20,15 @@ fi
 git -c core.autocrlf=false clone --filter=blob:none --no-checkout "$source_url" "$build_dir"
 git -C "$build_dir" config core.autocrlf false
 git -C "$build_dir" checkout --detach "$base_commit"
-git -C "$build_dir" apply --check "$kit_dir/patches/xsw250ns-support-r4-diag.patch"
-git -C "$build_dir" apply "$kit_dir/patches/xsw250ns-support-r4-diag.patch"
+git -C "$build_dir" apply --check "$kit_dir/patches/xsw250ns-support-r5-usb-nas.patch"
+git -C "$build_dir" apply "$kit_dir/patches/xsw250ns-support-r5-usb-nas.patch"
 cp "$kit_dir/config/feeds.pinned.conf" "$build_dir/feeds.conf"
 cp "$kit_dir/config/xsw250ns.full.config" "$build_dir/.config"
 cd "$build_dir"
 ./scripts/feeds update -a
 ./scripts/feeds install -a
+git -C feeds/packages apply --check "$kit_dir/patches/openvpn-2.7.8.patch"
+git -C feeds/packages apply "$kit_dir/patches/openvpn-2.7.8.patch"
 make defconfig
 
 python3 - "$kit_dir/evidence/base-r3-build-manifest.json" <<'PY'

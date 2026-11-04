@@ -1,0 +1,2418 @@
+diff --git a/package/boot/uboot-tools/uboot-envtools/files/airoha_an7581 b/package/boot/uboot-tools/uboot-envtools/files/airoha_an7581
+index c0a5c9fb44..75fbd5200c 100644
+--- a/package/boot/uboot-tools/uboot-envtools/files/airoha_an7581
++++ b/package/boot/uboot-tools/uboot-envtools/files/airoha_an7581
+@@ -13,7 +13,8 @@ board=$(board_name)
+ 
+ case "$board" in
+ gemtek,w1700k-ubi|\
+-nokia,xg-040g-md-ubi)
++nokia,xg-040g-md-ubi|\
++vnpt,xsw250ns-ubi)
+ 	ubootenv_add_ubi_default
+ 	;;
+ nokia,xg-040g-md)
+diff --git a/target/linux/airoha/an7581/base-files/etc/board.d/01_leds b/target/linux/airoha/an7581/base-files/etc/board.d/01_leds
+index 5cec5df424..0e99a2afba 100644
+--- a/target/linux/airoha/an7581/base-files/etc/board.d/01_leds
++++ b/target/linux/airoha/an7581/base-files/etc/board.d/01_leds
+@@ -9,6 +9,14 @@ board_config_update
+ board=$(board_name)
+ 
+ case "$board" in
++vnpt,xsw250ns-ubi)
++	for port in 1 2 3 4; do
++		phy_addr="$(printf '%02x' "$((port + 8))")"
++		ucidef_set_led_netdev "lan$port" "LAN $port" "mt7530-0:$phy_addr:green:lan-$port" "lan$port" "link tx rx"
++	done
++	ucidef_set_led_wlan "wlan2g" "Wi-Fi 2.4 GHz" "xsw250ns:wlan-2g" "phy0radio"
++	ucidef_set_led_wlan "wlan5g" "Wi-Fi 5 GHz" "xsw250ns:wlan-5g" "phy1radio"
++	;;
+ airoha,an7581-evb)
+ 	ucidef_set_led_usbport "usb1" "USB 1" "green:usb-1" "usb1-port1" "usb2-port1"
+ 	ucidef_set_led_usbport "usb2" "USB 2" "green:usb-2" "usb3-port1" "usb4-port1"
+diff --git a/target/linux/airoha/an7581/base-files/etc/board.d/02_network b/target/linux/airoha/an7581/base-files/etc/board.d/02_network
+index b0d0fd8590..4434941d93 100644
+--- a/target/linux/airoha/an7581/base-files/etc/board.d/02_network
++++ b/target/linux/airoha/an7581/base-files/etc/board.d/02_network
+@@ -24,6 +24,9 @@ an7581_setup_interfaces()
+ 	nokia,xg-040g-md-ubi)
+ 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+ 		;;
++	vnpt,xsw250ns-ubi)
++		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "lan2p5"
++		;;
+ 	quantum,q1000k-ubi)
+ 		# Both copper ports are LAN; the upstream connection is PON.
+ 		ucidef_set_interface_lan "lan1 lan2"
+diff --git a/target/linux/airoha/an7581/base-files/lib/upgrade/platform.sh b/target/linux/airoha/an7581/base-files/lib/upgrade/platform.sh
+index d8cf5e2586..d13c09ed5c 100644
+--- a/target/linux/airoha/an7581/base-files/lib/upgrade/platform.sh
++++ b/target/linux/airoha/an7581/base-files/lib/upgrade/platform.sh
+@@ -20,7 +20,8 @@ platform_check_image() {
+ 		return $?
+ 		;;
+ 	nokia,xg-040g-md-ubi|\
+-	quantum,q1000k-ubi)
++	quantum,q1000k-ubi|\
++	vnpt,xsw250ns-ubi)
+ 		fit_check_image "$1"
+ 		return $?
+ 		;;
+@@ -35,7 +36,8 @@ platform_do_upgrade() {
+ 	case "$board" in
+ 		gemtek,w1700k-ubi|\
+ 		nokia,xg-040g-md-ubi|\
+-		quantum,q1000k-ubi)
++		quantum,q1000k-ubi|\
++		vnpt,xsw250ns-ubi)
+ 			fit_do_upgrade "$1"
+ 			;;
+ 		*)
+diff --git a/target/linux/airoha/image/an7581.mk b/target/linux/airoha/image/an7581.mk
+index 64e685ff33..9cb29f0fd4 100644
+--- a/target/linux/airoha/image/an7581.mk
++++ b/target/linux/airoha/image/an7581.mk
+@@ -196,3 +196,28 @@ define Device/quantum_q1000k-ubi
+   SOC := an7581
+ endef
+ TARGET_DEVICES += quantum_q1000k-ubi
++
++# Uses the user's existing UBI U-Boot; no bootloader artifacts are built.
++define Device/vnpt_xsw250ns-ubi
++  DEVICE_VENDOR := VNPT
++  DEVICE_MODEL := iGate XSW250-NS
++  DEVICE_VARIANT := UBI
++  DEVICE_DTS := an7581-vnpt-xsw250ns-ubi
++  DEVICE_PACKAGES := fitblk kmod-phy-airoha-en8811h kmod-mt7916-firmware wpad-mbedtls
++  BLOCKSIZE := 128k
++  PAGESIZE := 2048
++  UBINIZE_OPTS := -E 5
++  UBOOTENV_IN_UBI := 1
++  KERNEL_IN_UBI := 1
++  KERNEL := kernel-bin | gzip
++  KERNEL_INITRAMFS := kernel-bin | lzma | \
++	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 128k
++  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
++  IMAGES := sysupgrade.itb
++  IMAGE_SIZE := 226944k
++  IMAGE/sysupgrade.itb := append-kernel | \
++	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
++	append-metadata | check-size
++  SOC := an7581
++endef
++TARGET_DEVICES += vnpt_xsw250ns-ubi
+diff --git a/target/linux/airoha/an7581/base-files/etc/board.d/04_xsw250ns_ubootenv b/target/linux/airoha/an7581/base-files/etc/board.d/04_xsw250ns_ubootenv
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/board.d/04_xsw250ns_ubootenv
+@@ -0,0 +1,32 @@
++# board_detect also runs before mount_root: /etc is SquashFS and read-only.
++# Discover the two environment volumes by name and write only to tmpfs here.
++# /etc/fw_env.config is an image-provided symlink to this runtime reader.
++. /lib/functions.sh
++
++[ "$(board_name)" = 'vnpt,xsw250ns-ubi' ] || exit 0
++
++. /lib/upgrade/nand.sh
++
++envubi="$(nand_find_ubi ubi)" || exit 1
++case "$envubi" in ubi[0-9]*) ;; *) exit 1 ;; esac
++case "${envubi#ubi}" in ''|*[!0-9]*) exit 1 ;; esac
++
++env1="$(nand_find_volume "$envubi" ubootenv)" || exit 1
++env2="$(nand_find_volume "$envubi" ubootenv2)" || exit 1
++for envvol in "$env1" "$env2"; do
++	case "$envvol" in "$envubi"_[0-9]*) ;; *) exit 1 ;; esac
++	case "${envvol#"$envubi"_}" in ''|*[!0-9]*) exit 1 ;; esac
++	[ -c "/dev/$envvol" ] || exit 1
++	# The supplied U-Boot uses one 0x1f000-byte LEB per environment copy.
++	[ "$(cat "/sys/class/ubi/$envvol/usable_eb_size")" = '126976' ] || exit 1
++done
++[ "$env1" != "$env2" ] || exit 1
++
++(
++	umask 077
++	envtmp="$(mktemp /tmp/xsw250ns-fw_env.config.XXXXXX)" || exit 1
++	trap 'rm -f "$envtmp"' EXIT
++	printf '/dev/%s 0x0 0x1f000 0x1f000 1\n' "$env1" "$env2" > "$envtmp" || exit 1
++	chmod 600 "$envtmp" || exit 1
++	mv -f "$envtmp" /tmp/xsw250ns-fw_env.config || exit 1
++)
+diff --git a/target/linux/airoha/an7581/base-files/etc/config/xsw250ns_status b/target/linux/airoha/an7581/base-files/etc/config/xsw250ns_status
+new file mode 100644
+index 0000000000..59a9af6275
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/config/xsw250ns_status
+@@ -0,0 +1,9 @@
++config status 'main'
++	option enabled '1'
++	option tel1_enabled '1'
++	option temp_on '100'
++	option temp_off '95'
++	option tel2_mode 'internet'
++	option interval '15'
++	option target1 '1.1.1.1'
++	option target2 '9.9.9.9'
+diff --git a/target/linux/airoha/an7581/base-files/etc/init.d/xsw250ns-clock b/target/linux/airoha/an7581/base-files/etc/init.d/xsw250ns-clock
+new file mode 100755
+index 0000000000..e6cde74f0e
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/init.d/xsw250ns-clock
+@@ -0,0 +1,45 @@
++#!/bin/sh /etc/rc.common
++
++START=01
++STOP=89
++
++valid_epoch() {
++	case "$1" in ''|*[!0-9]*) return 1 ;; esac
++	[ "${#1}" -le 10 ] && [ "$1" -ge 946684800 ] && [ "$1" -le 4102444800 ]
++}
++
++clock_floor() {
++	local build saved
++	build="$(sed -n 's/^OPENWRT_BUILD_DATE="\([0-9]*\)"$/\1/p' /usr/lib/os-release)"
++	valid_epoch "$build" || return 1
++	saved="$(cat /etc/xsw250ns-clock/epoch 2>/dev/null)"
++	if valid_epoch "$saved" && [ "$saved" -gt "$build" ]; then
++		build="$saved"
++	fi
++	printf '%s\n' "$build"
++}
++
++start() {
++	[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = 'vnpt,xsw250ns-ubi' ] || return 0
++	local floor now
++	floor="$(clock_floor)" || return 1
++	now="$(date +%s)"
++	if [ "$now" -lt "$floor" ]; then
++		date -u -s "@$floor" >/dev/null || return 1
++		logger -t xsw250ns-clock 'Restored approximate clock from firmware/last shutdown; waiting for NTP' 2>/dev/null || :
++	fi
++}
++
++stop() {
++	[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = 'vnpt,xsw250ns-ubi' ] || return 0
++	local floor now
++	floor="$(clock_floor)" || return 1
++	now="$(date +%s)"
++	valid_epoch "$now" && [ "$now" -ge "$floor" ] || return 0
++	# Save once on orderly shutdown, not every NTP poll, to limit flash writes.
++	( umask 077
++	  mkdir -p /etc/xsw250ns-clock || exit 1
++	  printf '%s\n' "$now" > /etc/xsw250ns-clock/epoch.new || exit 1
++	  mv /etc/xsw250ns-clock/epoch.new /etc/xsw250ns-clock/epoch
++	)
++}
+diff --git a/target/linux/airoha/an7581/base-files/etc/uci-defaults/95-xsw250ns-apk-feeds b/target/linux/airoha/an7581/base-files/etc/uci-defaults/95-xsw250ns-apk-feeds
+new file mode 100755
+index 0000000000..db8cce29c0
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/uci-defaults/95-xsw250ns-apk-feeds
+@@ -0,0 +1,21 @@
++#!/bin/sh
++# The official aarch64_cortex-a53 video index returns HTTP 404 (2026-10-29).
++# Disable only that exact optional feed, preserving every other repository.
++[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = 'vnpt,xsw250ns-ubi' ] || exit 0
++for apk_feed in /etc/apk/repositories /etc/apk/repositories.d/*.list; do
++ [ -f "$apk_feed" ] || continue
++ awk '
++ { line=$0; sub(/^[ \t]+/, "", line); sub(/[ \t\r]+$/, "", line)
++   if (line == "https://downloads.immortalwrt.org/snapshots/packages/aarch64_cortex-a53/video/packages.adb")
++     print "# XSW250NS: optional video index unavailable (HTTP 404): " $0
++   else print $0
++ }' "$apk_feed" > "$apk_feed.xsw-new" || { rm -f "$apk_feed.xsw-new"; exit 1; }
++ if cmp -s "$apk_feed" "$apk_feed.xsw-new"; then rm -f "$apk_feed.xsw-new"; else
++  mkdir -p /etc/xsw250ns-apk-backup
++  chmod 700 /etc/xsw250ns-apk-backup
++  cp -p "$apk_feed" "/etc/xsw250ns-apk-backup/$(basename "$apk_feed").$(date +%s).before" || exit 1
++  cat "$apk_feed.xsw-new" > "$apk_feed" || exit 1
++  rm -f "$apk_feed.xsw-new"
++ fi
++done
++exit 0
+diff --git a/target/linux/airoha/an7581/base-files/etc/uci-defaults/96-xsw250ns-leds b/target/linux/airoha/an7581/base-files/etc/uci-defaults/96-xsw250ns-leds
+new file mode 100755
+index 0000000000..122bd0a7a2
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/uci-defaults/96-xsw250ns-leds
+@@ -0,0 +1,13 @@
++#!/bin/sh
++[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = 'vnpt,xsw250ns-ubi' ] || exit 0
++uci set system.led_wlan2g='led'
++uci set system.led_wlan2g.name='Wi-Fi 2.4 GHz'
++uci set system.led_wlan2g.sysfs='xsw250ns:wlan-2g'
++uci set system.led_wlan2g.trigger='phy0radio'
++uci set system.led_wlan5g='led'
++uci set system.led_wlan5g.name='Wi-Fi 5 GHz'
++uci set system.led_wlan5g.sysfs='xsw250ns:wlan-5g'
++uci set system.led_wlan5g.trigger='phy1radio'
++uci commit system
++/etc/init.d/xsw250ns-status enable
++exit 0
+diff --git a/target/linux/airoha/an7581/base-files/etc/uci-defaults/97-xsw250ns-clock b/target/linux/airoha/an7581/base-files/etc/uci-defaults/97-xsw250ns-clock
+new file mode 100755
+index 0000000000..06b9602f0a
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/uci-defaults/97-xsw250ns-clock
+@@ -0,0 +1,24 @@
++#!/bin/sh
++
++[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = 'vnpt,xsw250ns-ubi' ] || exit 0
++
++# sysfixtime relies on inode mtimes, which are discarded by this recovery
++# kernel. Apply the build/last-shutdown lower bound on the first boot too.
++/etc/init.d/xsw250ns-clock enable
++/etc/init.d/xsw250ns-clock start
++
++uci set system.@system[0].timezone='ICT-7'
++uci set system.@system[0].zonename='Asia/Ho_Chi_Minh'
++uci set system.ntp='timeserver'
++uci set system.ntp.enabled='1'
++uci set system.ntp.use_dhcp='1'
++
++# Keep user-selected servers; populate defaults only when the list is empty.
++if [ -z "$(uci -q get system.ntp.server)" ]; then
++	uci add_list system.ntp.server='time.cloudflare.com'
++	uci add_list system.ntp.server='time.google.com'
++	uci add_list system.ntp.server='0.asia.pool.ntp.org'
++fi
++uci commit system
++/etc/init.d/sysntpd enable
++exit 0
+diff --git a/target/linux/airoha/an7581/base-files/etc/uci-defaults/99-xsw250ns-luci-vpn b/target/linux/airoha/an7581/base-files/etc/uci-defaults/99-xsw250ns-luci-vpn
+new file mode 100755
+index 0000000000..f534781daf
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/uci-defaults/99-xsw250ns-luci-vpn
+@@ -0,0 +1,23 @@
++#!/bin/sh
++
++. /lib/functions.sh
++. /lib/functions/system.sh
++
++[ "$(board_name)" = "vnpt,xsw250ns-ubi" ] || exit 0
++
++uci -q delete uhttpd.main.listen_https || :
++
++# Keep SQM, VPN policy routing and traffic accounting in the software path.
++# These services remain unconfigured until the administrator enables them.
++uci -q batch <<'EOF'
++set system.@system[0].hostname='XSW250NS'
++set firewall.@defaults[0].flow_offloading='0'
++set firewall.@defaults[0].flow_offloading_hw='0'
++set firewall.@defaults[0].fullcone='0'
++add_list uhttpd.main.listen_https='0.0.0.0:443'
++add_list uhttpd.main.listen_https='[::]:443'
++set uhttpd.main.redirect_https='1'
++commit system
++commit firewall
++commit uhttpd
++EOF
+diff --git a/target/linux/airoha/an7581/base-files/usr/share/ucode/xsw250ns/ledpolicy.uc b/target/linux/airoha/an7581/base-files/usr/share/ucode/xsw250ns/ledpolicy.uc
+new file mode 100644
+index 0000000000..e01c65d740
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/usr/share/ucode/xsw250ns/ledpolicy.uc
+@@ -0,0 +1,14 @@
++'use strict';
++
++export function thermal(previous, value, on, off) {
++	if (type(value) != 'int' && type(value) != 'double' || value < 0 || value > 150000) return previous;
++	if (value >= on * 1000) return true;
++	if (value < off * 1000) return false;
++	return previous;
++}
++
++export function reachability(previous, success, passes, failures) {
++	passes = success ? passes + 1 : 0;
++	failures = success ? 0 : failures + 1;
++	return { online: success && passes >= 2 ? true : !success && failures >= 3 ? false : previous, passes, failures };
++}
+diff --git a/target/linux/airoha/an7581/base-files/www/luci-static/resources/xsw250ns/portrole.js b/target/linux/airoha/an7581/base-files/www/luci-static/resources/xsw250ns/portrole.js
+new file mode 100644
+index 0000000000..4026d49f79
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/www/luci-static/resources/xsw250ns/portrole.js
+@@ -0,0 +1,107 @@
++'use strict';
++'require baseclass';
++
++const PORT = 'lan2p5';
++const STATE = 'xsw250ns_port2p5';
++
++function list(value) {
++	return Array.isArray(value) ? value.slice() : String(value || '').trim().split(/\s+/).filter(Boolean);
++}
++
++function sections(config, type) {
++	return Object.keys(config).filter(id => config[id]['.type'] == type);
++}
++
++function usesPort(device) {
++	return device == PORT || String(device || '').indexOf(PORT + '.') == 0;
++}
++
++return baseclass.extend({
++	inspect(network, firewall) {
++		const bridges = sections(network, 'device').filter(id => network[id].name == 'br-lan' && network[id].type == 'bridge');
++		const zones = sections(firewall, 'zone').filter(id => firewall[id].name == 'wan');
++		const fail = reason => ({ role: 'custom', supported: false, reason: reason });
++		if (bridges.length != 1 || network.lan?.device != 'br-lan' || zones.length != 1)
++			return fail('Cần cấu hình LAN br-lan và vùng tường lửa WAN tiêu chuẩn.');
++		const bridge = bridges[0], ports = list(network[bridge].ports);
++		if (network[bridge].vlan_filtering == '1' || sections(network, 'bridge-vlan').some(id => network[id].device == 'br-lan'))
++			return fail('Mạng đang dùng VLAN trên bridge. Hãy đổi vai trò cổng trong Mạng → Giao diện.');
++		if (network[STATE] && network[STATE]['.type'] != 'xsw250ns_port')
++			return fail('Tên cấu hình cổng đã được sử dụng.');
++		for (const id of sections(network, 'device')) {
++			if (usesPort(network[id].name) && network[id].name != PORT || list(network[id].ports).some(p => usesPort(p) && p != PORT))
++				return fail('Cổng 2.5G đang dùng VLAN. Hãy dùng Mạng → Giao diện.');
++			if (id != bridge && list(network[id].ports).some(usesPort))
++				return fail('Cổng 2.5G đang thuộc một bridge hoặc nhóm cổng khác.');
++			if (usesPort(network[id].ifname))
++				return fail('Cổng 2.5G đang dùng cấu hình VLAN hoặc thiết bị nâng cao.');
++		}
++		for (const id of sections(network, 'interface')) {
++			const s = network[id];
++			if (usesPort(s.device) && (id != 'wan' && id != 'wan6' || s.device != PORT))
++				return fail('Cổng 2.5G đang dùng interface hoặc VLAN tùy chỉnh.');
++			if (list(s.ifname).some(usesPort) || s.device == '@wan' && id != 'wan6')
++				return fail('Cổng 2.5G có cấu hình phụ thuộc; hãy dùng Mạng → Giao diện.');
++		}
++		for (const id of ['wan', 'wan6']) {
++			const s = network[id];
++			if (s && (s['.type'] != 'interface' || s.device != PORT && !(id == 'wan6' && s.device == '@wan') || s.ifname || s.auto == '0'))
++				return fail('WAN hiện tại dùng thiết bị khác hoặc cấu hình khởi động riêng. Hãy dùng Mạng → Giao diện.');
++		}
++		if (network.wan6?.device == '@wan' && !network.wan)
++			return fail('Interface WAN6 đang thiếu interface WAN phụ thuộc.');
++		for (const id of sections(firewall, 'zone')) {
++			if (id != zones[0] && list(firewall[id].network).some(n => n == 'wan' || n == 'wan6'))
++				return fail('Interface WAN đang thuộc vùng tường lửa khác. Hãy dùng Mạng → Giao diện.');
++		}
++		const inLAN = ports.includes(PORT);
++		const activeWAN = ['wan', 'wan6'].some(id => network[id] && network[id].disabled != '1');
++		if (inLAN && activeWAN)
++			return fail('Cổng đang đồng thời gán vào LAN và WAN. Hãy kiểm tra Mạng → Giao diện.');
++		return { supported: true, bridge: bridge, zone: zones[0], role: inLAN ? 'lan' : activeWAN ? 'wan' : 'unused' };
++	},
++
++	plan(network, firewall, role) {
++		if (role != 'lan' && role != 'wan')
++			throw new Error('Vai trò cổng không hợp lệ.');
++		const status = this.inspect(network, firewall);
++		if (!status.supported)
++			throw new Error(status.reason);
++		if (status.role == role)
++			return [];
++		const ops = [];
++		const set = (config, section, option, value) => ops.push({ config, section, option, value });
++		const add = (config, section, type) => ops.push({ config, section, type });
++		const ports = list(network[status.bridge].ports).filter(p => p != PORT);
++		if (role == 'lan') {
++			const enabled = ['wan', 'wan6'].filter(id => network[id] && network[id].disabled != '1');
++			if (!network[STATE])
++				add('network', STATE, 'xsw250ns_port');
++			set('network', STATE, 'disabled_interfaces', enabled);
++			for (const id of enabled)
++				set('network', id, 'disabled', '1');
++			ports.push(PORT);
++		} else {
++			const restore = list(network[STATE]?.disabled_interfaces);
++			for (const id of ['wan', 'wan6']) {
++				if (id == 'wan6' && !network[id])
++					continue;
++				if (!network[id]) {
++					add('network', id, 'interface');
++					set('network', id, 'proto', 'dhcp');
++					set('network', id, 'device', PORT);
++				}
++				if (id == 'wan' || restore.includes(id))
++					set('network', id, 'disabled', null);
++			}
++			if (network[STATE])
++				ops.push({ config: 'network', section: STATE, remove: true });
++			const members = list(firewall[status.zone].network);
++			for (const id of ['wan', 'wan6'])
++				if ((network[id] || id == 'wan') && !members.includes(id)) members.push(id);
++			set('firewall', status.zone, 'network', members);
++		}
++		set('network', status.bridge, 'ports', ports);
++		return ops;
++	}
++});
+diff --git a/target/linux/airoha/patches-6.18/950-net-airoha-fix-external-serdes-nbq.patch b/target/linux/airoha/patches-6.18/950-net-airoha-fix-external-serdes-nbq.patch
+new file mode 100644
+index 0000000000..0167557f5f
+--- /dev/null
++++ b/target/linux/airoha/patches-6.18/950-net-airoha-fix-external-serdes-nbq.patch
+@@ -0,0 +1,30 @@
++From: pbs05 <27010143+pbs05@users.noreply.github.com>
++Subject: [PATCH] net: airoha: select NBQ for PPE egress on external SerDes
++
++GDM3 and GDM4 can each connect multiple net_devices through an external
++SerDes arbiter. The QDMA transmit path selects the net_device's NBQ, while
++PPE flow entries currently select NBQ 0 for direct GDM3/GDM4 egress.
++
++Observed IPv4 flow entries directed to GDM3 NBQ 5 and GDM4 NBQ 1 both
++carry NBQ 0. Program the net_device NBQ in those flow entries so PPE
++selects the same SerDes as the QDMA transmit path.
++
++Fixes: 7758cb462ff7 ("net: airoha: Introduce WAN device flag")
++Signed-off-by: pbs05 <27010143+pbs05@users.noreply.github.com>
++---
++ drivers/net/ethernet/airoha/airoha_ppe.c | 4 ++++
++ 1 file changed, 4 insertions(+)
++
++--- a/drivers/net/ethernet/airoha/airoha_ppe.c
+++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
++@@ -503,6 +503,10 @@ static int airoha_ppe_foe_entry_prepare(s
++ 			 */
++ 			if (airoha_is_lan_gdm_dev(dev))
++ 				val |= AIROHA_FOE_IB2_FAST_PATH;
+++			/* GDM3/GDM4 select their external SerDes through NBQ. */
+++			if (pse_port == FE_PSE_PORT_GDM3 ||
+++			    pse_port == FE_PSE_PORT_GDM4)
+++				val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ, dev->nbq);
++ 			if (dsa_port >= 0)
++ 				val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ,
++ 						  dsa_port);
+diff --git a/target/linux/airoha/patches-6.18/951-net-pcs-airoha-fix-link-mode-and-calibration.patch b/target/linux/airoha/patches-6.18/951-net-pcs-airoha-fix-link-mode-and-calibration.patch
+new file mode 100644
+index 0000000000..180de9d630
+--- /dev/null
++++ b/target/linux/airoha/patches-6.18/951-net-pcs-airoha-fix-link-mode-and-calibration.patch
+@@ -0,0 +1,120 @@
++Subject: [PATCH] net: pcs: airoha: fix link register selection and CDR calibration
++
++Backport the independent fixes reviewed in voz188/ponwrt commit
++c3b518baec8ed0cc5a353327fa154f38bde1e6c0, patch 310-09. Keep the current
++ImmortalWrt PCS interfaces and AN7583 support.
++
++Avoid a zero divisor when the CDR search reaches an exact match, use
++unsigned absolute differences, and select the AN register bank and 10M
++link mode correctly. The RX 1G mode must use the RX register field.
++
++--- a/drivers/net/pcs/airoha/pcs-airoha-common.c
+++++ b/drivers/net/pcs/airoha/pcs-airoha-common.c
++@@ -687,7 +687,7 @@
++ 		regmap_set_bits(maps->hsgmii_pcs, AIROHA_PCS_HSGMII_PCS_CTROL_1,
++ 				AIROHA_PCS_SGMII_SEND_AN_ERR_EN);
++ 
++-		regmap_set_bits(maps->hsgmii_pcs, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_FORCE_CL37,
+++		regmap_set_bits(maps->hsgmii_an, AIROHA_PCS_HSGMII_AN_SGMII_REG_AN_FORCE_CL37,
++ 				AIROHA_PCS_HSGMII_AN_FORCE_AN_DONE);
++ 	}
++ 
++@@ -852,7 +852,7 @@
++ 				ck_gen_mode = AIROHA_PCS_HSGMII_PCS_FORCE_CUR_SGMII_MODE_100;
++ 				break;
++ 			case SPEED_10:
++-				speed_reg = AIROHA_PCS_LINK_MODE_P0_100M;
+++				speed_reg = AIROHA_PCS_LINK_MODE_P0_10M;
++ 				if_mode = AIROHA_PCS_HSGMII_AN_SPEED_FORCE_MODE_10;
++ 				ck_gen_mode = AIROHA_PCS_HSGMII_PCS_FORCE_CUR_SGMII_MODE_10;
++ 				break;
++--- a/drivers/net/pcs/airoha/pcs-an7581.c
+++++ b/drivers/net/pcs/airoha/pcs-an7581.c
++@@ -3,6 +3,7 @@
++  * Copyright (c) 2024 AIROHA Inc
++  * Author: Christian Marangi <ansuelsmth@gmail.com>
++  */
+++#include <linux/math.h>
++ #include <linux/phy/phy.h>
++ #include <linux/phylink.h>
++ #include <linux/regmap.h>
++@@ -1101,7 +1102,7 @@
++ 		sigdet_vth_sel = BIT(2) | BIT(1);
++ 		phyck_div = BIT(5) | BIT(3) | BIT(0);
++ 		phyck_sel = BIT(0);
++-		xfi_rx_mode = AIROHA_PCS_PMA_XFI_TX_MODE_1G25;
+++		xfi_rx_mode = AIROHA_PCS_PMA_XFI_RX_MODE_1G25;
++ 		break;
++ 	case PHY_INTERFACE_MODE_2500BASEX:
++ 		osr = BIT(0); /* 2.5G */
++@@ -1498,7 +1499,7 @@
++ 		fl_out = an7581_pcs_apply_cdr_pr_idac(priv, index, cdr_pr_idac_tmp);
++ 
++ 		/* Use absolute values to find the closest one to target */
++-		fl_out_diff_new = abs(fl_out - target_fl_out);
+++		fl_out_diff_new = abs_diff(fl_out, target_fl_out);
++ 		dev_dbg(priv->dev, "Tested CDR Pr Idac: %x Fl Out: %x Diff: %u\n",
++ 			cdr_pr_idac_tmp, fl_out, fl_out_diff_new);
++ 		if (fl_out_diff_new < fl_out_diff) {
++@@ -1520,7 +1521,7 @@
++ 	int prcal_search_bit;
++ 
++ 	fl_out = an7581_pcs_apply_cdr_pr_idac(priv, index, cdr_pr_idac);
++-	fl_out_diff = abs(fl_out - target_fl_out);
+++	fl_out_diff = abs_diff(fl_out, target_fl_out);
++ 
++ 	/* Deadline search part.
++ 	 * We start from top bits to bottom as we progressively decrease the
++@@ -1534,7 +1535,7 @@
++ 		fl_out = an7581_pcs_apply_cdr_pr_idac(priv, index, cdr_pr_idac_tmp);
++ 
++ 		/* Use absolute values to find the closest one to target */
++-		fl_out_diff_new = abs(fl_out - target_fl_out);
+++		fl_out_diff_new = abs_diff(fl_out, target_fl_out);
++ 		dev_dbg(priv->dev, "Tested CDR Pr Idac: %x Fl Out: %x Diff: %u\n",
++ 			cdr_pr_idac_tmp, fl_out, fl_out_diff_new);
++ 		if (fl_out_diff_new < fl_out_diff) {
++@@ -1564,7 +1565,7 @@
++ 		fl_out = an7581_pcs_apply_cdr_pr_idac(priv, index, cdr_pr_idac_tmp);
++ 
++ 		/* Use absolute values to find the closest one to target */
++-		fl_out_diff_new = abs(fl_out - target_fl_out);
+++		fl_out_diff_new = abs_diff(fl_out, target_fl_out);
++ 		/* Assume we found the deadline when the new absolue signal difference
++ 		 * from target is greater than the previous and the difference is at
++ 		 * least 10% greater between the old and new value.
++@@ -1574,8 +1575,14 @@
++ 		 */
++ 		dev_dbg(priv->dev, "Tested CDR Pr Idac: %x Fl Out: %x Diff: %u\n",
++ 			cdr_pr_idac_tmp, fl_out, fl_out_diff_new);
++-		if (fl_out_diff_new > fl_out_diff &&
++-		    (abs(fl_out_diff_new - fl_out_diff) * 100) / fl_out_diff > 10) {
+++		/* An exact match needs no further tuning. */
+++		if (!fl_out_diff_new) {
+++			cdr_pr_idac |= BIT(prcal_search_bit);
+++			break;
+++		}
+++
+++		if (fl_out_diff && fl_out_diff_new > fl_out_diff &&
+++		    (abs_diff(fl_out_diff_new, fl_out_diff) * 100) / fl_out_diff > 10) {
++ 			/* Exit early if we are already at the deadline */
++ 			if (prcal_search_bit == 0)
++ 				break;
++@@ -1708,7 +1715,7 @@
++ 						     target_fl_out, cdr_pr_idac_major);
++ 
++ 	fl_out = an7581_pcs_apply_cdr_pr_idac(priv, index, cdr_pr_idac);
++-	fl_out_diff = abs(fl_out - target_fl_out);
+++	fl_out_diff = abs_diff(fl_out, target_fl_out);
++ 	if (fl_out_diff > 100) {
++ 		u32 pr_idac_major = FIELD_GET(AIROHA_PCS_PMA_FORCE_CDR_PR_IDAC_MAJOR,
++ 					      cdr_pr_idac_major);
++@@ -1728,7 +1735,7 @@
++ 
++ 			fl_out_tmp = an7581_pcs_apply_cdr_pr_idac(priv, index,
++ 								  cdr_pr_idac_tmp);
++-			fl_out_diff_tmp = abs(fl_out_tmp - target_fl_out);
+++			fl_out_diff_tmp = abs_diff(fl_out_tmp, target_fl_out);
++ 			if (fl_out_diff_tmp < fl_out_diff) {
++ 				fl_out = fl_out_tmp;
++ 				fl_out_diff = fl_out_diff_tmp;
+diff --git a/target/linux/airoha/patches-6.18/952-watchdog-airoha-handle-long-userspace-timeouts.patch b/target/linux/airoha/patches-6.18/952-watchdog-airoha-handle-long-userspace-timeouts.patch
+new file mode 100644
+index 0000000000..d65506e0d5
+--- /dev/null
++++ b/target/linux/airoha/patches-6.18/952-watchdog-airoha-handle-long-userspace-timeouts.patch
+@@ -0,0 +1,33 @@
++From: XSW250NS board support <noreply@localhost>
++Subject: [PATCH] watchdog: airoha: let the core handle long userspace timeouts
++
++procd requests 30 seconds, beyond the 32-bit timer's approximately
++28-second limit at 150 MHz. Advertise the hardware heartbeat interval
++instead of rejecting the userspace timeout. Clamp the programmed timer
++to whole seconds within that interval, and let the watchdog core provide
++intermediate pings. Do not multiply a long userspace timeout by the clock
++rate, which would wrap the timer load register.
++
++--- a/drivers/watchdog/airoha_wdt.c
+++++ b/drivers/watchdog/airoha_wdt.c
++@@ -59,7 +59,9 @@
++ 	val = readl(airoha_wdt->base + TIMER_CTRL);
++ 	val |= (WDT_TIMER_ENABLE | WDT_ENABLE | WDT_TIMER_INTERRUPT);
++ 	writel(val, airoha_wdt->base + TIMER_CTRL);
++-	val = wdog_dev->timeout * airoha_wdt->wdt_freq;
+++	/* The core pings on behalf of userspace for longer timeouts. */
+++	val = min(wdog_dev->timeout,
+++		  wdog_dev->max_hw_heartbeat_ms / 1000) * airoha_wdt->wdt_freq;
++ 	writel(val, airoha_wdt->base + WDT_TIMER_LOAD_VALUE);
++ 
++ 	return 0;
++@@ -157,7 +159,8 @@
++ 	wdog_dev->info = &airoha_wdt_info;
++ 	wdog_dev->ops = &airoha_wdt_ops;
++ 	/* Bus 300MHz, watchdog 150MHz, 28 seconds */
++-	wdog_dev->max_timeout = FIELD_MAX(WDT_TIMER_VAL) / airoha_wdt->wdt_freq;
+++	wdog_dev->max_hw_heartbeat_ms =
+++		(FIELD_MAX(WDT_TIMER_VAL) / airoha_wdt->wdt_freq) * 1000;
++ 	wdog_dev->parent = dev;
++ 
++ 	watchdog_set_drvdata(wdog_dev, airoha_wdt);
+diff --git a/target/linux/airoha/an7581/base-files/etc/fw_env.config b/target/linux/airoha/an7581/base-files/etc/fw_env.config
+new file mode 120000
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/fw_env.config
+@@ -0,0 +1,1 @@
++/tmp/xsw250ns-fw_env.config
+\ No newline at end of file
+diff --git a/target/linux/airoha/an7581/base-files/etc/xsw250ns-nand-fix.json b/target/linux/airoha/an7581/base-files/etc/xsw250ns-nand-fix.json
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/xsw250ns-nand-fix.json
+@@ -0,0 +1,8 @@
++{
++  "version": "r3-nand1",
++  "fix": "Prepare the U-Boot environment reader in tmpfs before the writable overlay is mounted",
++  "base_sysupgrade_sha256": "a4f0d871c753338a10e2eac776a8b7a6880a33c5d875f9121f9beafde44d9fee",
++  "kernel_and_dtb_changed": false,
++  "writes_bootloader_environment": false,
++  "hardware_tested": false
++}
+diff --git a/target/linux/airoha/an7581/base-files/usr/share/luci/menu.d/luci-xsw250ns-diagnostics.json b/target/linux/airoha/an7581/base-files/usr/share/luci/menu.d/luci-xsw250ns-diagnostics.json
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/usr/share/luci/menu.d/luci-xsw250ns-diagnostics.json
+@@ -0,0 +1,8 @@
++{
++  "admin/system/xsw250ns-diagnostics": {
++    "title": "Chẩn đoán hệ thống",
++    "order": 95,
++    "action": { "type": "view", "path": "system/xsw250ns-diagnostics" },
++    "depends": { "acl": ["luci-xsw250ns-diagnostics"] }
++  }
++}
+diff --git a/target/linux/airoha/an7581/base-files/usr/share/rpcd/acl.d/luci-xsw250ns-diagnostics.json b/target/linux/airoha/an7581/base-files/usr/share/rpcd/acl.d/luci-xsw250ns-diagnostics.json
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/usr/share/rpcd/acl.d/luci-xsw250ns-diagnostics.json
+@@ -0,0 +1,6 @@
++{
++  "luci-xsw250ns-diagnostics": {
++    "description": "Read-only XSW250NS system diagnostics",
++    "read": { "ubus": { "luci.xsw250ns-diagnostics": ["collect"] } }
++  }
++}
+diff --git a/target/linux/airoha/an7581/base-files/usr/share/rpcd/ucode/luci.xsw250ns-diagnostics b/target/linux/airoha/an7581/base-files/usr/share/rpcd/ucode/luci.xsw250ns-diagnostics
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/usr/share/rpcd/ucode/luci.xsw250ns-diagnostics
+@@ -0,0 +1,12 @@
++'use strict';
++import { collect } from 'xsw250ns.diagnostics';
++
++return { 'luci.xsw250ns-diagnostics': {
++	collect: {
++		args: { group: '' },
++		call: request => {
++			try { return collect(request.args.group); }
++			catch (e) { return { error: 'Không thu thập được: ' + e }; }
++		}
++	}
++} };
+diff --git a/target/linux/airoha/an7581/base-files/www/luci-static/resources/view/system/xsw250ns-diagnostics.js b/target/linux/airoha/an7581/base-files/www/luci-static/resources/view/system/xsw250ns-diagnostics.js
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/www/luci-static/resources/view/system/xsw250ns-diagnostics.js
+@@ -0,0 +1,138 @@
++'use strict';
++'require view';
++'require rpc';
++
++const collect = rpc.declare({
++	object: 'luci.xsw250ns-diagnostics', method: 'collect',
++	params: ['group'], expect: { '': {} }, timeout: 30000
++});
++
++const groups = [
++	['system', 'Hệ thống, CPU, RAM & nhiệt độ'],
++	['storage', 'NAND, UBI, overlay & U-Boot'],
++	['ports', 'MAC, LAN/WAN, PHY 2.5G & định tuyến'],
++	['wireless', 'Wi-Fi, radio & driver'],
++	['services', 'Dịch vụ, DNS, firewall & VPN'],
++	['logs', 'Sự kiện kernel & nhật ký hệ thống']
++];
++
++function pretty(value) { return JSON.stringify(value, null, 2); }
++function show(value) { return value == null ? 'Chưa có dữ liệu' : String(value); }
++function cell(value) { return E('td', {}, show(value)); }
++function table(headers, rows) {
++	return E('div', { style: 'overflow-x:auto' }, [E('table', { 'class': 'table' }, [
++		E('tr', { 'class': 'tr table-titles' }, headers.map(h => E('th', { 'class': 'th' }, h))),
++		...rows.map(row => E('tr', { 'class': 'tr' }, row.map(cell)))
++	])]);
++}
++function evidence(title, value) {
++	return E('details', { style: 'margin:0.8em 0' }, [
++		E('summary', { style: 'cursor:pointer;font-weight:bold' }, title),
++		E('pre', { style: 'white-space:pre-wrap;overflow-wrap:anywhere;max-height:38em;overflow:auto' },
++			typeof value === 'string' ? value : pretty(value))
++	]);
++}
++function findings(report) {
++	const items = report.findings || [];
++	if (!items.length) return E('p', {}, 'Chưa phát hiện cảnh báo theo các điều kiện đã kiểm tra. Không phải chứng nhận toàn bộ phần cứng hoạt động tốt.');
++	return E('div', {}, items.map(f => E('div', {
++		'class': 'alert-message ' + (f.level === 'warning' ? 'warning' : 'notice'),
++		style: 'margin-bottom:0.6em'
++	}, [E('strong', {}, f.title), E('p', {}, f.evidence), E('p', {}, f.advice)])));
++}
++function content(report) {
++	const d = report.data || {}, nodes = [findings(report)];
++	if (report.group === 'system') {
++		const m = d.info?.memory || {};
++		nodes.push(table(['Thông số', 'Giá trị'], [
++			['Model', d.board?.model], ['Kernel', d.board?.kernel],
++			['Firmware', report.build], ['Uptime (giây)', d.info?.uptime],
++			['RAM tổng (byte)', m.total], ['RAM khả dụng (byte)', m.available],
++			['CPU online', d.cpu_online], ['Load', d.load_average],
++			['Thời gian router', d.clock?.text?.trim()]
++		]));
++		nodes.push(table(['Cảm biến', 'Loại', 'Nhiệt độ °C'], (d.thermal || []).map(t =>
++			[t.zone, t.type, t.temperature_millic == null ? null : (t.temperature_millic / 1000).toFixed(1)])));
++	} else if (report.group === 'ports') {
++		nodes.push(table(['Cổng', 'Hiện diện', 'Link', 'Mbps', 'Duplex', 'MAC', 'Kiểu gán MAC', 'RX/TX lỗi'],
++			(d.devices || []).map(p => [p.name, p.present ? 'Có' : 'Không',
++				p.carrier == null ? null : p.carrier ? 'Có' : 'Không', p.speed_mbps, p.duplex, p.mac,
++				({ 0: 'Cố định', 1: 'Ngẫu nhiên', 2: 'Lấy từ thiết bị khác', 3: 'Đã gán bằng phần mềm' })[p.address_assignment_type],
++				p.counters ? show(p.counters.rx_errors) + '/' + show(p.counters.tx_errors) : null])));
++		nodes.push(E('p', {}, 'Bộ đếm lỗi và carrier_changes là số tích lũy. Thu thập lại để so sánh; link 1G trên cổng 2.5G có thể là thương lượng bình thường với thiết bị 1G.'));
++	} else if (report.group === 'wireless') {
++		nodes.push(table(['Radio', 'Đang lên', 'Đã tắt', 'Đang chờ', 'Khởi tạo lỗi', 'Kênh', 'Chế độ'],
++			(d.radios || []).map(r => [r.name, r.up, r.disabled, r.pending, r.retry_setup_failed, r.config?.channel, r.config?.htmode])));
++	} else if (report.group === 'services') {
++		nodes.push(table(['Dịch vụ', 'Đăng ký với procd', 'Instance đang chạy'],
++			(d.services || []).map(s => [s.name, s.registered ? 'Có' : 'Chưa thấy',
++				s.registered ? s.instances.filter(i => i.running).length + '/' + s.instances.length : 'Có thể chưa cài hoặc không chạy qua procd'])));
++	}
++	for (const key of Object.keys(d)) nodes.push(evidence(key, d[key]));
++	return E('div', {}, nodes);
++}
++
++return view.extend({
++	load() { return Promise.resolve(); },
++
++	render() {
++		let busy = false, snapshot = null;
++		const reports = {}, sections = {}, errors = {};
++		const message = E('p', { role: 'status', 'aria-live': 'polite' }, 'Chưa thu thập. Bấm nút để đọc trạng thái hiện tại.');
++		const downloads = E('button', { 'class': 'cbi-button cbi-button-action', disabled: true }, 'Tải báo cáo JSON');
++		const refresh = E('button', { 'class': 'cbi-button cbi-button-apply' }, 'Thu thập toàn bộ chẩn đoán');
++		const collection = E('div', {}, groups.map(([id, title]) => {
++			sections[id] = E('div', {}, 'Chưa thu thập.');
++			return E('details', { open: id === 'system', style: 'margin:1em 0' }, [
++				E('summary', { style: 'font-size:1.15em;font-weight:bold;cursor:pointer' }, title), sections[id]
++			]);
++		}));
++		refresh.addEventListener('click', async () => {
++			if (busy) return;
++			busy = true; refresh.disabled = true; downloads.disabled = true;
++			// Replace every group: a failed fresh request must never display old data.
++			for (const [id] of groups) { delete reports[id]; delete errors[id]; sections[id].replaceChildren('Đang chờ…'); }
++			snapshot = { schema: 2, started_at_browser: new Date().toISOString() };
++			let failed = 0;
++			try {
++				for (const [id, title] of groups) {
++					message.textContent = 'Đang đọc: ' + title + '…';
++					try {
++						const report = await collect(id);
++						if (!report || report.error || report.group !== id || report.schema !== 2 || !report.data)
++							throw new Error(report?.error || 'RPC trả dữ liệu không đúng nhóm.');
++						reports[id] = report;
++						sections[id].replaceChildren(content(report));
++					} catch (e) {
++						failed++; errors[id] = String(e.message || e);
++						sections[id].replaceChildren(E('p', { 'class': 'alert-message warning' }, 'Không đọc được nhóm này: ' + errors[id]));
++					}
++				}
++				snapshot.finished_at_browser = new Date().toISOString();
++				message.textContent = 'Đã đọc ' + (groups.length - failed) + '/' + groups.length + ' nhóm. ' +
++					(failed ? 'Báo cáo có nhóm thiếu dữ liệu; không coi là đạt kiểm tra.' : 'Xem cảnh báo và bằng chứng trong từng nhóm.') +
++					' Thời điểm trình duyệt: ' + snapshot.finished_at_browser;
++			} finally {
++				busy = false; refresh.disabled = false;
++				downloads.disabled = Object.keys(reports).length === 0;
++			}
++		});
++		downloads.addEventListener('click', () => {
++			if (busy || !snapshot || !Object.keys(reports).length) return;
++			const data = { ...snapshot, groups: reports, collection_errors: errors,
++				privacy: 'Contains MAC/IP, network status and filtered logs. Review before sharing.' };
++			const url = URL.createObjectURL(new Blob([pretty(data) + '\n'], { type: 'application/json;charset=utf-8' }));
++			const link = E('a', { href: url, download: 'xsw250ns-diagnostics-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json' });
++			document.body.appendChild(link); link.click(); link.remove();
++			setTimeout(() => URL.revokeObjectURL(url), 1000);
++		});
++		return E('div', {}, [
++			E('h2', {}, 'Chẩn đoán hệ thống — XSW250-NS'),
++			E('p', {}, 'Đọc trạng thái thực tế và chỉ ra những dấu hiệu cần kiểm tra. Mở từng nhóm để xem đầy đủ số liệu, log và bằng chứng. Chưa có dữ liệu được ghi rõ; không tự kết luận hỏng linh kiện.'),
++			E('p', {}, 'Thu thập khi bạn bấm nút; không tự sửa cấu hình, khởi động lại, ghi flash hoặc gửi dữ liệu ra Internet. MAC/IP có trong báo cáo. Đã lọc khóa, mật khẩu và dòng bootargs; hãy xem lại trước khi chia sẻ.'),
++			E('p', {}, [refresh, ' ', downloads]), message, collection,
++			E('p', { 'class': 'cbi-value-description' }, 'PON và chức năng điện thoại TEL chưa được hỗ trợ. Chẩn đoán phần mềm không thay thế kiểm tra router thực tế; tốc độ link, đèn và cảm biến còn phụ thuộc driver/phần cứng.')
++		]);
++	},
++	handleSave: null, handleSaveApply: null, handleReset: null
++});
+diff --git a/target/linux/airoha/an7581/base-files/etc/rc.d/S00xsw250ns-retire-legacy b/target/linux/airoha/an7581/base-files/etc/rc.d/S00xsw250ns-retire-legacy
+new file mode 120000
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/rc.d/S00xsw250ns-retire-legacy
+@@ -0,0 +1 @@
++../init.d/xsw250ns-retire-legacy
+\ No newline at end of file
+diff --git a/target/linux/airoha/an7581/base-files/etc/config/fstab b/target/linux/airoha/an7581/base-files/etc/config/fstab
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/config/fstab
+@@ -0,0 +1,7 @@
++config global
++	option anon_swap '0'
++	option anon_mount '0'
++	option auto_swap '0'
++	option auto_mount '1'
++	option delay_root '5'
++	option check_fs '0'
+diff --git a/target/linux/airoha/an7581/base-files/etc/config/samba4 b/target/linux/airoha/an7581/base-files/etc/config/samba4
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/config/samba4
+@@ -0,0 +1,7 @@
++config samba
++	option workgroup 'WORKGROUP'
++	option charset 'UTF-8'
++	option description 'XSW250NS USB NAS'
++	option interface 'lan'
++	option disable_netbios '1'
++	option allow_legacy_protocols '0'
+diff --git a/target/linux/airoha/an7581/base-files/etc/init.d/xsw250ns-retire-legacy b/target/linux/airoha/an7581/base-files/etc/init.d/xsw250ns-retire-legacy
+new file mode 100755
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/init.d/xsw250ns-retire-legacy
+@@ -0,0 +1,35 @@
++#!/bin/sh /etc/rc.common
++# Remove the retired UI/RPC/worker even when an older add-on survives in overlay.
++# Runs after mount_root and before the former S18 recovery service.
++START=00
++STOP=90
++
++start() {
++	[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = 'vnpt,xsw250ns-ubi' ] || return 0
++	if [ -f /etc/xsw250ns-hotfix/pending.json ]; then
++		logger -t xsw250ns-diagnostics 'Retired feature had a pending transaction; existing network configuration was left unchanged. Verify connectivity.'
++	fi
++	# All targets are fixed retired-feature paths. No UCI changes or service reloads.
++	rm -f /etc/rc.d/S18xsw250ns-hotfix /etc/rc.d/K89xsw250ns-hotfix \
++		/etc/init.d/xsw250ns-hotfix /etc/uci-defaults/98-xsw250ns-hotfix \
++		/usr/libexec/xsw250ns-hotfix \
++		/usr/share/luci/menu.d/luci-xsw250ns-hotfix.json \
++		/usr/share/rpcd/acl.d/luci-xsw250ns-hotfix.json \
++		/usr/share/rpcd/ucode/luci.xsw250ns-hotfix \
++		/usr/share/ucode/xsw250ns/hotfix.uc /usr/share/ucode/xsw250ns/policy.uc \
++		/www/luci-static/resources/view/system/xsw250ns-hotfix.js
++	rm -f /www/luci-static/resources/view/system/xsw250ns-status.js \
++		/www/luci-static/resources/view/status/include/99_xsw250ns_port.js
++	# Includes retired API credentials and add-on backups; never copy them to reports.
++	rm -rf /etc/xsw250ns-hotfix /etc/xsw250ns-hotfix-install-backup
++	# An old add-on may have left its build ID in overlay. Refresh only this
++	# firmware-owned marker from the new immutable lower image, when available.
++	if [ "$(cat /rom/etc/xsw250ns-build-id 2>/dev/null)" = 'xsw250ns-20261104-r5-usb-nas' ]; then
++		cmp -s /rom/etc/xsw250ns-build-id /etc/xsw250ns-build-id ||
++			cp /rom/etc/xsw250ns-build-id /etc/xsw250ns-build-id
++	fi
++	# Clear generated LuCI indexes so the retired menu cannot linger after upgrade.
++	rm -f /tmp/luci-indexcache /tmp/luci-indexcache.*
++	rm -rf /tmp/luci-modulecache
++	return 0
++}
+diff --git a/target/linux/airoha/an7581/base-files/etc/init.d/xsw250ns-status b/target/linux/airoha/an7581/base-files/etc/init.d/xsw250ns-status
+new file mode 100755
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/init.d/xsw250ns-status
+@@ -0,0 +1,30 @@
++#!/bin/sh /etc/rc.common
++START=99
++USE_PROCD=1
++
++start_service() {
++	[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = 'vnpt,xsw250ns-ubi' ] || return 0
++	[ "$(uci -q get xsw250ns_status.main.enabled)" != '0' ] || return 0
++	procd_open_instance
++	procd_set_param command /usr/libexec/xsw250ns-status
++	procd_set_param respawn 3600 5 5
++	procd_set_param term_timeout 10
++	procd_set_param stdout 0
++	procd_set_param stderr 1
++	procd_set_param file /etc/config/xsw250ns_status
++	procd_close_instance
++}
++
++service_triggers() {
++	procd_add_reload_trigger xsw250ns_status
++}
++
++stop_service() {
++	local led
++	for led in tel1 tel2; do
++		[ -d "/sys/class/leds/xsw250ns:$led" ] || continue
++		echo none > "/sys/class/leds/xsw250ns:$led/trigger"
++		echo 0 > "/sys/class/leds/xsw250ns:$led/brightness"
++	done
++	rm -f /var/run/xsw250ns/status.json
++}
+diff --git a/target/linux/airoha/an7581/base-files/etc/samba/smb.conf.template b/target/linux/airoha/an7581/base-files/etc/samba/smb.conf.template
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/samba/smb.conf.template
+@@ -0,0 +1,131 @@
++[global]
++	server min protocol = SMB2_10
++	server max protocol = SMB3_11
++	ntlm auth = ntlmv2-only
++	wide links = no
++	netbios name = |NAME| 
++	interfaces = |INTERFACES|
++	server string = |DESCRIPTION|
++	unix charset = |CHARSET|
++	workgroup = |WORKGROUP|
++
++	client ipc min protocol = SMB2
++
++	## This global parameter allows the Samba admin to limit what interfaces on a machine will serve SMB requests.
++	bind interfaces only = yes
++
++	## time for inactive connections to-be closed in minutes
++	deadtime = 15
++
++	## disable core dumps
++	enable core files = no
++
++	## set security (auto, user, domain, ads)
++	security = user
++
++	## This parameter controls whether a remote client is allowed or required to use SMB encryption.
++	## It has different effects depending on whether the connection uses SMB1 or SMB2 and newer:
++	## If the connection uses SMB1, then this option controls the use of a Samba-specific extension to the SMB protocol introduced in Samba 3.2 that makes use of the Unix extensions.
++	## If the connection uses SMB2 or newer, then this option controls the use of the SMB-level encryption that is supported in SMB version 3.0 and above and available in Windows 8 and newer. 
++	## (default/auto,desired,required,off)
++	smb encrypt = default
++	server signing = default
++	client smb encrypt = default
++	server smb encrypt = default
++
++	## set invalid users
++	invalid users = root
++
++	## map unknow users to guest
++	map to guest = Never
++
++	## allow client access to accounts that have null passwords. 
++	null passwords = no
++
++	## The old plaintext passdb backend. Some Samba features will not work if this passdb backend is used. (NOTE: enabled for size reasons)
++	## (tdbsam,smbpasswd,ldapsam)
++	passdb backend = smbpasswd
++
++	## Set location of smbpasswd ('smbd -b' will show default compiled location)
++	#smb passwd file = /etc/samba/smbpasswd 
++
++	## LAN (IPTOS_LOWDELAY TCP_NODELAY) WAN (IPTOS_THROUGHPUT) WiFi (SO_KEEPALIVE) try&error for buffer sizes (SO_RCVBUF=65536 SO_SNDBUF=65536)
++	socket options = IPTOS_LOWDELAY TCP_NODELAY
++
++	## If this integer parameter is set to a non-zero value, Samba will read from files asynchronously when the request size is bigger than this value.
++	## Note that it happens only for non-chained and non-chaining reads and when not using write cache.
++	## The only reasonable values for this parameter are 0 (no async I/O) and 1 (always do async I/O).
++	## (1/0)
++	#aio read size = 0
++	#aio write size = 0
++
++	## If Samba has been built with asynchronous I/O support, Samba will not wait until write requests are finished before returning the result to the client for files listed in this parameter.
++	## Instead, Samba will immediately return that the write request has been finished successfully, no matter if the operation will succeed or not.
++	## This might speed up clients without aio support, but is really dangerous, because data could be lost and files could be damaged. 
++	#aio write behind = /*.tmp/
++
++	## lower CPU useage if supported and aio is disabled (aio read size = 0 ; aio write size = 0)
++	## is this still broken? issue is from 2019 (NOTE: see https://bugzilla.samba.org/show_bug.cgi?id=14095 )
++	## (no, yes)
++	#use sendfile = yes
++
++	## samba will behave as previous versions of Samba would and will fail the lock request immediately if the lock range cannot be obtained.
++	#blocking locks = No
++
++	## disable loading of all printcap printers by default (iprint, cups, lpstat)
++	load printers = No
++	printcap name = /dev/null
++
++	## Enabling this parameter will disable Samba's support for the SPOOLSS set of MS-RPC's.
++	disable spoolss = yes
++
++	## This parameters controls how printer status information is interpreted on your system.
++	## (BSD, AIX, LPRNG, PLP, SYSV, HPUX, QNX, SOFTQ)
++	printing = bsd
++
++	## Disable that nmbd is acting as a WINS server for unknow netbios names
++	#dns proxy = No
++
++	## win/unix user mapping backend
++	#idmap config * : backend = tdb
++
++	## Allows the server name that is advertised through MDNS to be set to the hostname rather than the Samba NETBIOS name.
++	## This allows an administrator to make Samba registered MDNS records match the case of the hostname rather than being in all capitals.
++	## (netbios, mdns)
++	mdns name = mdns
++
++	## Clients that only support netbios won't be able to see your samba server when netbios support is disabled.
++	#disable netbios = Yes
++
++	## Setting this value to no will cause nmbd never to become a local master browser.
++	#local master = no
++
++	## (auto, yes) If this is set to yes, on startup, nmbd will force an election, and it will have a slight advantage in winning the election. It is recommended that this parameter is used in conjunction with domain master = yes, so that nmbd can guarantee becoming a domain master. 
++	#preferred master = yes
++
++	## (445 139) Specifies which ports the server should listen on for SMB traffic.
++	## 139 is netbios/nmbd
++	#smb ports = 445 139
++
++	## This is a list of files and directories that are neither visible nor accessible.
++	## Each entry in the list must be separated by a '/', which allows spaces to be included in the entry. '*' and '?' can be used to specify multiple files or directories as in DOS wildcards.
++	veto files = /Thumbs.db/.DS_Store/._.DS_Store/.apdisk/
++
++	## If a directory that is to be deleted contains nothing but veto files this deletion will fail unless you also set the delete veto files parameter to yes.
++	delete veto files = yes
++
++################ Filesystem and creation rules ################
++	## reported filesystem type (NTFS,Samba,FAT)
++	#fstype = FAT
++
++	## Allows a user who has write access to the file (by whatever means, including an ACL permission) to modify the permissions (including ACL) on it.
++	#dos filemode = Yes
++
++	## file/dir creating rules
++	#create mask = 0666
++	#directory mask = 0777
++	#force group = root
++	#force user = root
++	#inherit owner = windows and unix
++################################################################
++
+diff --git a/target/linux/airoha/an7581/base-files/etc/uci-defaults/98-xsw250ns-diagnostics b/target/linux/airoha/an7581/base-files/etc/uci-defaults/98-xsw250ns-diagnostics
+new file mode 100755
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/uci-defaults/98-xsw250ns-diagnostics
+@@ -0,0 +1,5 @@
++#!/bin/sh
++[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = 'vnpt,xsw250ns-ubi' ] || exit 0
++/etc/init.d/xsw250ns-retire-legacy enable
++/etc/init.d/xsw250ns-retire-legacy start
++exit 0
+diff --git a/target/linux/airoha/an7581/base-files/etc/uci-defaults/99-xsw250ns-usb-nas b/target/linux/airoha/an7581/base-files/etc/uci-defaults/99-xsw250ns-usb-nas
+new file mode 100755
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/uci-defaults/99-xsw250ns-usb-nas
+@@ -0,0 +1,5 @@
++#!/bin/sh
++# No automatic formatting, anonymous shares or default NAS password.
++[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = 'vnpt,xsw250ns-ubi' ] || exit 0
++/etc/init.d/samba4 disable
++exit 0
+diff --git a/target/linux/airoha/an7581/base-files/etc/xsw250ns-build-id b/target/linux/airoha/an7581/base-files/etc/xsw250ns-build-id
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/xsw250ns-build-id
+@@ -0,0 +1,1 @@
++xsw250ns-20261104-r5-usb-nas
+diff --git a/target/linux/airoha/an7581/base-files/usr/libexec/xsw250ns-link-report b/target/linux/airoha/an7581/base-files/usr/libexec/xsw250ns-link-report
+new file mode 100755
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/usr/libexec/xsw250ns-link-report
+@@ -0,0 +1,20 @@
++#!/bin/sh
++# Read-only diagnostics: no PHY writes, renegotiation or interface restarts.
++printf '=== build ===\n'
++cat /etc/xsw250ns-build-id
++date
++uptime
++printf '=== PHY and port ===\n'
++ethtool lan2p5
++ethtool -i lan2p5
++ethtool --show-eee lan2p5
++ethtool -S lan2p5
++ip -s link show dev lan2p5
++bridge link
++printf '=== recent link events ===\n'
++dmesg | grep -E 'lan2p5.*(Link is|PHY|configuring)|eth0.*Link is' | tail -n 60
++printf '=== resources and LED status ===\n'
++free
++cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null
++cat /var/run/xsw250ns/status.json 2>/dev/null
++exit 0
+diff --git a/target/linux/airoha/an7581/base-files/usr/libexec/xsw250ns-status b/target/linux/airoha/an7581/base-files/usr/libexec/xsw250ns-status
+new file mode 100755
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/usr/libexec/xsw250ns-status
+@@ -0,0 +1,92 @@
++#!/usr/bin/ucode
++'use strict';
++import * as fs from 'fs';
++import { cursor } from 'uci';
++import { connect } from 'ubus';
++import * as uloop from 'uloop';
++import { thermal, reachability } from 'xsw250ns.ledpolicy';
++import { writeStatus, removeStatus } from 'xsw250ns.state';
++
++if (trim(fs.readfile('/tmp/sysinfo/board_name') ?? '') != 'vnpt,xsw250ns-ubi') exit(0);
++const config = cursor();
++const cfg = config.get_all('xsw250ns_status', 'main') ?? {};
++if (cfg.enabled == '0') exit(0);
++const bound = (n, low, high, fallback) => match('' + n, /^[0-9]+$/) && +n >= low && +n <= high ? +n : fallback;
++const interval = bound(cfg.interval, 10, 300, 15);
++const tempOn = bound(cfg.temp_on, 60, 115, 100);
++const tempOff = min(bound(cfg.temp_off, 40, 114, 95), tempOn - 1);
++const mode = index(['internet', 'link', 'off'], cfg.tel2_mode) >= 0 ? cfg.tel2_mode : 'internet';
++const validTarget = t => type(t) == 'string' && length(t) <= 100 && !!match(t, /^[A-Za-z0-9][A-Za-z0-9.-]*$/);
++const targets = [validTarget(cfg.target1) ? cfg.target1 : '1.1.1.1', validTarget(cfg.target2) ? cfg.target2 : '9.9.9.9'];
++const paths = { tel1: '/sys/class/leds/xsw250ns:tel1', tel2: '/sys/class/leds/xsw250ns:tel2' };
++let hot = false, online = null, passes = 0, failures = 0;
++const applied = {};
++let bus = connect(null, 1);
++
++function command(argv) {
++	const p = fs.popen(argv, 'r');
++	if (!p) return false;
++	p.read('all');
++	return p.close() == 0;
++}
++
++function led(name, action) {
++	const path = paths[name];
++	if (!fs.access(path + '/brightness')) return false;
++	if (applied[name] == action) return true;
++	if (action == 'blink') {
++		fs.writefile(path + '/trigger', 'timer\n');
++		fs.writefile(path + '/delay_on', '500\n');
++		fs.writefile(path + '/delay_off', '500\n');
++	} else {
++		fs.writefile(path + '/trigger', 'none\n');
++		fs.writefile(path + '/brightness', action == 'on' ? (trim(fs.readfile(path + '/max_brightness')) || '1') : '0');
++	}
++	applied[name] = action;
++	return true;
++}
++
++function tick() {
++	const temperatures = [];
++	for (let zone in fs.glob('/sys/class/thermal/thermal_zone*') ?? []) {
++		if (trim(fs.readfile(zone + '/type') ?? '') != 'cpu-thermal') continue;
++		const raw = trim(fs.readfile(zone + '/temp') ?? '');
++		if (match(raw, /^[0-9]+$/) && +raw <= 150000) push(temperatures, +raw);
++	}
++	const temp = length(temperatures) ? max(...temperatures) : null;
++	if (temp != null) hot = thermal(hot, temp, tempOn, tempOff);
++	const tel1 = led('tel1', cfg.tel1_enabled == '0' ? 'off' : temp == null ? 'blink' : hot ? 'on' : 'off');
++	let uplinks = [];
++	try {
++		const dump = bus?.call('network.interface', 'dump') ?? {};
++		for (let iface in dump.interface ?? []) {
++			if (!iface.up) continue;
++			if (length(filter(iface.route ?? [], r => r.mask == 0 && (r.target == '0.0.0.0' || r.target == '::')))) push(uplinks, iface.interface);
++		}
++	} catch (e) { bus = connect(null, 1); }
++	if (mode != 'off') {
++		let success = length(uplinks) > 0;
++		if (mode == 'internet' && success) {
++			success = false;
++			for (let target in targets) {
++				if (command(['/usr/bin/timeout', '3', '/bin/ping', '-c', '1', '-W', '1', target])) { success = true; break; }
++			}
++		}
++		const next = reachability(online, success, passes, failures);
++		online = next.online; passes = next.passes; failures = next.failures;
++	}
++	const tel2 = led('tel2', mode == 'off' ? 'off' : online === true ? 'on' : 'blink');
++	const status = { firmware: trim(fs.readfile('/etc/xsw250ns-build-id')), uptime: +split(fs.readfile('/proc/uptime'), ' ')[0], temperature_millic: temp, temp_on: tempOn, temp_off: tempOff, overheat: hot, tel1_present: tel1, tel2_present: tel2, tel2_mode: mode, online, uplinks, consecutive_successes: passes, consecutive_failures: failures, interval, gpio_verified_on_hardware: false };
++	writeStatus(status);
++}
++
++// Let procd stop/reload the service while it is waiting between probes.
++uloop.init();
++const shutdown = uloop.signal('SIGTERM', () => uloop.end());
++let timer;
++timer = uloop.timer(1, () => { tick(); timer.set(interval * 1000); });
++uloop.run();
++led('tel1', 'off');
++led('tel2', 'off');
++removeStatus();
++uloop.done();
+diff --git a/target/linux/airoha/an7581/base-files/usr/share/luci/menu.d/luci-mod-system.json b/target/linux/airoha/an7581/base-files/usr/share/luci/menu.d/luci-mod-system.json
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/usr/share/luci/menu.d/luci-mod-system.json
+@@ -0,0 +1,212 @@
++{
++  "admin/system/system": {
++    "title": "System",
++    "order": 1,
++    "action": {
++      "type": "view",
++      "path": "system/system"
++    },
++    "depends": {
++      "acl": [
++        "luci-mod-system-config"
++      ]
++    }
++  },
++  "admin/system/admin": {
++    "title": "Administration",
++    "order": 2,
++    "action": {
++      "type": "firstchild"
++    },
++    "depends": {
++      "acl": [
++        "luci-mod-system-config",
++        "luci-mod-system-ssh"
++      ]
++    }
++  },
++  "admin/system/admin/password": {
++    "title": "Router Password",
++    "order": 1,
++    "action": {
++      "type": "view",
++      "path": "system/password"
++    },
++    "depends": {
++      "acl": [
++        "luci-mod-system-config"
++      ]
++    }
++  },
++  "admin/system/admin/pwpolicy": {
++    "title": "Password Policy",
++    "order": 2,
++    "action": {
++      "type": "view",
++      "path": "system/pwpolicy"
++    },
++    "depends": {
++      "acl": [
++        "luci-mod-system-pwpolicy"
++      ]
++    }
++  },
++  "admin/system/admin/dropbear": {
++    "title": "SSH Access",
++    "order": 5,
++    "action": {
++      "type": "view",
++      "path": "system/dropbear"
++    },
++    "depends": {
++      "acl": [
++        "luci-mod-system-ssh"
++      ],
++      "fs": {
++        "/usr/sbin/dropbear": "executable"
++      }
++    }
++  },
++  "admin/system/admin/sshkeys": {
++    "title": "SSH-Keys",
++    "order": 6,
++    "action": {
++      "type": "view",
++      "path": "system/sshkeys"
++    },
++    "depends": {
++      "acl": [
++        "luci-mod-system-ssh"
++      ],
++      "fs": {
++        "/usr/sbin/dropbear": "executable"
++      }
++    }
++  },
++  "admin/system/admin/uhttpd": {
++    "title": "HTTP(S) Access",
++    "order": 7,
++    "action": {
++      "type": "view",
++      "path": "system/uhttpd"
++    },
++    "depends": {
++      "acl": [
++        "luci-mod-system-uhttpd"
++      ],
++      "fs": {
++        "/usr/sbin/uhttpd": "executable"
++      }
++    }
++  },
++  "admin/system/admin/repokeys": {
++    "title": "Repo Public Keys",
++    "order": 8,
++    "action": {
++      "type": "view",
++      "path": "system/repokeys"
++    },
++    "depends": {
++      "acl": [
++        "luci-mod-system-repokeys"
++      ]
++    }
++  },
++  "admin/system/plugins": {
++    "title": "Plugins",
++    "order": 4,
++    "action": {
++      "type": "view",
++      "path": "system/plugins"
++    },
++    "depends": {
++      "acl": [
++        "luci-mod-system-plugins"
++      ]
++    }
++  },
++  "admin/system/startup": {
++    "title": "Startup",
++    "order": 45,
++    "action": {
++      "type": "view",
++      "path": "system/startup-xsw250ns-v2"
++    },
++    "depends": {
++      "acl": [
++        "luci-mod-system-init"
++      ]
++    }
++  },
++  "admin/system/crontab": {
++    "title": "Scheduled Tasks",
++    "order": 46,
++    "action": {
++      "type": "view",
++      "path": "system/crontab"
++    },
++    "depends": {
++      "acl": [
++        "luci-mod-system-cron"
++      ]
++    }
++  },
++  "admin/system/mounts": {
++    "title": "Mount Points",
++    "order": 50,
++    "action": {
++      "type": "view",
++      "path": "system/mounts"
++    },
++    "depends": {
++      "acl": [
++        "luci-mod-system-mounts"
++      ],
++      "fs": {
++        "/sbin/block": "executable"
++      }
++    }
++  },
++  "admin/system/leds": {
++    "title": "LED Configuration",
++    "order": 60,
++    "action": {
++      "type": "view",
++      "path": "system/leds"
++    },
++    "depends": {
++      "acl": [
++        "luci-mod-system-config"
++      ],
++      "fs": {
++        "/sys/class/leds": "directory"
++      }
++    }
++  },
++  "admin/system/flash": {
++    "title": "Backup / Flash Firmware",
++    "order": 70,
++    "action": {
++      "type": "view",
++      "path": "system/flash"
++    },
++    "depends": {
++      "acl": [
++        "luci-mod-system-flash"
++      ]
++    }
++  },
++  "admin/system/reboot": {
++    "title": "Reboot",
++    "order": 90,
++    "action": {
++      "type": "view",
++      "path": "system/reboot"
++    },
++    "depends": {
++      "acl": [
++        "luci-mod-system-reboot"
++      ]
++    }
++  }
++}
+diff --git a/target/linux/airoha/an7581/base-files/usr/share/luci/menu.d/luci-xsw250ns-status.json b/target/linux/airoha/an7581/base-files/usr/share/luci/menu.d/luci-xsw250ns-status.json
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/usr/share/luci/menu.d/luci-xsw250ns-status.json
+@@ -0,0 +1,8 @@
++{
++  "admin/system/xsw250ns-status-v2": {
++    "title": "LED & Kết nối",
++    "order": 71,
++    "action": { "type": "view", "path": "system/xsw250ns-status-v2" },
++    "depends": { "acl": ["luci-xsw250ns-status"] }
++  }
++}
+diff --git a/target/linux/airoha/an7581/base-files/usr/share/rpcd/acl.d/luci-xsw250ns-port.json b/target/linux/airoha/an7581/base-files/usr/share/rpcd/acl.d/luci-xsw250ns-port.json
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/usr/share/rpcd/acl.d/luci-xsw250ns-port.json
+@@ -0,0 +1,12 @@
++{
++  "luci-xsw250ns-port": {
++    "description": "Read XSW250NS port state; changes require standard network/firewall administration rights",
++    "read": {
++      "ubus": {
++        "system": ["board"],
++        "session": ["access"],
++        "luci.xsw250ns-port": ["status"]
++      }
++    }
++  }
++}
+diff --git a/target/linux/airoha/an7581/base-files/usr/share/rpcd/acl.d/luci-xsw250ns-status.json b/target/linux/airoha/an7581/base-files/usr/share/rpcd/acl.d/luci-xsw250ns-status.json
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/usr/share/rpcd/acl.d/luci-xsw250ns-status.json
+@@ -0,0 +1,10 @@
++{
++  "luci-xsw250ns-status": {
++    "description": "XSW250NS LED status and temperature thresholds",
++    "read": {
++      "ubus": { "luci.xsw250ns-status": ["status"] },
++      "uci": ["xsw250ns_status"]
++    },
++    "write": { "uci": ["xsw250ns_status"] }
++  }
++}
+diff --git a/target/linux/airoha/an7581/base-files/usr/share/rpcd/ucode/luci.xsw250ns-port b/target/linux/airoha/an7581/base-files/usr/share/rpcd/ucode/luci.xsw250ns-port
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/usr/share/rpcd/ucode/luci.xsw250ns-port
+@@ -0,0 +1,24 @@
++'use strict';
++
++import * as fs from 'fs';
++import { cursor } from 'uci';
++
++// Read-only overview snapshots never contain passwords, PPP credentials or VPN keys.
++function snapshot() {
++	if (trim(fs.readfile('/tmp/sysinfo/board_name') ?? '') != 'vnpt,xsw250ns-ubi')
++		return { error: 'Unsupported board.' };
++	const u = cursor(), result = { network: {}, firewall: {} };
++	for (let config in ['network', 'firewall']) {
++		u.foreach(config, null, section => {
++			const row = { '.type': section['.type'], '.name': section['.name'] };
++			const allowed = config == 'network'
++				? ['name', 'type', 'device', 'proto', 'ifname', 'ports', 'vlan_filtering', 'disabled', 'auto', 'disabled_interfaces']
++				: ['name', 'network'];
++			for (let key in allowed) if (section[key] != null) row[key] = section[key];
++			result[config][section['.name']] = row;
++		});
++	}
++	return result;
++}
++
++return { 'luci.xsw250ns-port': { status: { call: snapshot } } };
+diff --git a/target/linux/airoha/an7581/base-files/usr/share/rpcd/ucode/luci.xsw250ns-status b/target/linux/airoha/an7581/base-files/usr/share/rpcd/ucode/luci.xsw250ns-status
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/usr/share/rpcd/ucode/luci.xsw250ns-status
+@@ -0,0 +1,6 @@
++'use strict';
++
++import { readStatus } from 'xsw250ns.state';
++
++// Only the validated runtime status is exposed; no caller-supplied path or command.
++return { 'luci.xsw250ns-status': { status: { call: () => ({ data: readStatus() ?? '' }) } } };
+diff --git a/target/linux/airoha/an7581/base-files/usr/share/ucode/xsw250ns/diagnostics.uc b/target/linux/airoha/an7581/base-files/usr/share/ucode/xsw250ns/diagnostics.uc
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/usr/share/ucode/xsw250ns/diagnostics.uc
+@@ -0,0 +1,337 @@
++'use strict';
++
++import * as fs from 'fs';
++import { connect } from 'ubus';
++import { cursor } from 'uci';
++import { readStatus } from 'xsw250ns.state';
++
++// The RPC accepts only a group name. It never accepts commands, paths or config.
++const GROUPS = ['system', 'storage', 'ports', 'wireless', 'services', 'logs'];
++const PORTS = ['eth0', 'eth1', 'lan1', 'lan2', 'lan3', 'lan4', 'lan2p5', 'br-lan'];
++const SERVICES = ['network', 'firewall', 'dnsmasq', 'odhcpd', 'sysntpd', 'wpad',
++	'dropbear', 'uhttpd', 'rpcd', 'sqm', 'pbr', 'samba4', 'blockd', 'openvpn', 'tailscale', 'zerotier'];
++
++function read(path, limit) {
++	// Reject FIFO/device inputs before open(); procfs symlinks are kernel-owned.
++	let node = fs.lstat(path);
++	if (node?.type == 'link' && index(path, '/proc/') == 0) node = fs.stat(path);
++	if (node?.type != 'file') return null;
++	const f = fs.open(path, 'r');
++	if (!f) return null;
++	const value = f.read(limit ?? 8192);
++	f.close();
++	return value == null ? null : trim(value);
++}
++
++function number(path) {
++	const value = read(path, 128);
++	return value != null && match(value, /^-?[0-9]+$/) ? +value : null;
++}
++
++function subset(value, names) {
++	const out = {};
++	for (let key in names) if (value?.[key] != null) out[key] = value[key];
++	return out;
++}
++
++function call(bus, object, method, args) {
++	try { return bus?.call(object, method, args ?? {}); }
++	catch (e) { return null; }
++}
++
++function command(argv, limit, keep_tail) {
++	// BusyBox timeout kills a stuck reader. No command is provided by the browser.
++	const p = fs.popen(['/usr/bin/timeout', '-s', 'KILL', '2', '/bin/sh', '-c',
++		'exec "$@" 2>&1', 'diagnostic', ...argv], 'r');
++	if (!p) return { available: false, text: '', exit_code: null, truncated: false };
++	const cap = limit ?? 12000;
++	let text = '', total = 0, chunk;
++	// Drain stdout even after reaching the bound, so a full pipe cannot deadlock.
++	while (length(chunk = p.read(4096))) {
++		total += length(chunk);
++		if (keep_tail) {
++			text += chunk;
++			if (length(text) > cap) text = substr(text, length(text) - cap);
++		} else if (length(text) < cap) text += substr(chunk, 0, cap - length(text));
++	}
++	const rc = p.close();
++	return { available: rc == 0, text, exit_code: rc, truncated: total > cap };
++}
++
++function hiddenValues() {
++	const hidden = [], u = cursor();
++	// Read UCI solely to find values to mask; no config is returned or changed.
++	for (let name in ['network', 'wireless', 'openvpn', 'ddns', 'system', 'rpcd']) {
++		try {
++			u.foreach(name, null, s => {
++				for (let key, val in s)
++					if (match(key, /(pass|secret|token|key|ssid|username|hostname|clientid)/i))
++						for (let v in type(val) == 'array' ? val : [val])
++							if (type(v) == 'string' && length(v) >= 4) push(hidden, v);
++			});
++		} catch (e) { /* An absent optional package is not a collection failure. */ }
++	}
++	return hidden;
++}
++
++export function redact(text, hidden) {
++	let out = '' + (text ?? '');
++	for (let secret in sort(hidden ?? [], (a, b) => length(b) - length(a)))
++		if (type(secret) == 'string' && length(secret) >= 4)
++			out = join('[HIDDEN]', split(out, secret));
++	// Never include a kernel command line: OEM bootargs can contain passwords.
++	out = join('\n', filter(split(out, '\n'), line => !match(line, /kernel command line:|bootargs=/i)));
++	out = replace(out, /(sk-|github_pat_|ghp_|AIza)[A-Za-z0-9_-]{8,}/g, '[TOKEN]');
++	const private_header = match(out, /-----BEGIN[^\n]*PRIVATE KEY-----/);
++	if (private_header) out = substr(out, 0, index(out, private_header[0])) + '[PRIVATE KEY REMOVED]';
++	out = replace(out, /((password|passwd|secret|token|psk|ssid|username|serial|authorization|bearer|api[_-]?key)["' \t]*[:= ]+)[^\r\n]*/gi, '$1[HIDDEN]');
++	return out;
++}
++
++function sanitize(value, hidden) {
++	if (type(value) == 'string') return redact(value, hidden);
++	if (type(value) == 'array') return map(value, v => sanitize(v, hidden));
++	if (type(value) == 'object') {
++		const out = {};
++		for (let k, v in value) out[k] = sanitize(v, hidden);
++		return out;
++	}
++	return value;
++}
++
++function thermal() {
++	const rows = [];
++	for (let path in fs.glob('/sys/class/thermal/thermal_zone[0-9]*'))
++		push(rows, { zone: fs.basename(path), type: read(path + '/type', 128),
++			temperature_millic: number(path + '/temp') });
++	return rows;
++}
++
++function system(bus) {
++	const b = call(bus, 'system', 'board'), info = call(bus, 'system', 'info');
++	const cpu = [];
++	for (let path in fs.glob('/sys/devices/system/cpu/cpufreq/policy[0-9]*'))
++		push(cpu, { policy: fs.basename(path), driver: read(path + '/scaling_driver', 128),
++			governor: read(path + '/scaling_governor', 128),
++			current_khz: number(path + '/scaling_cur_freq'),
++			minimum_khz: number(path + '/scaling_min_freq'), maximum_khz: number(path + '/scaling_max_freq') });
++	return {
++		board: subset(b, ['system', 'model', 'board_name', 'kernel']),
++		release: subset(b?.release, ['distribution', 'version', 'revision', 'target', 'description']),
++		info: subset(info, ['uptime', 'localtime', 'load', 'memory', 'swap']),
++		cpu_online: read('/sys/devices/system/cpu/online', 128), cpu_frequency: cpu,
++		thermal: thermal(), memory_detail: read('/proc/meminfo', 6000),
++		load_average: read('/proc/loadavg', 256), kernel_tainted: number('/proc/sys/kernel/tainted'),
++		clock: command(['/bin/date', '-Iseconds'], 128),
++		led_status: readStatus()
++	};
++}
++
++export function validMac(mac) {
++	return type(mac) == 'string' && !!match(mac, /^[0-9a-fA-F][02468aAcCeE](:[0-9a-fA-F]{2}){5}$/)
++		&& lc(mac) != '00:00:00:00:00:00';
++}
++
++export function readerPatternValid(reader) {
++	if (type(reader) != 'string') return false;
++	const lines = split(trim(reader), '\n');
++	if (length(lines) != 2) return false;
++	for (let line in lines) if (!match(line, /^\/dev\/ubi[0-9]+_[0-9]+ 0x0 0x1f000 0x1f000 1$/)) return false;
++	const a = split(lines[0], ' ')[0], b = split(lines[1], ' ')[0];
++	return a != b && split(a, '_')[0] == split(b, '_')[0];
++}
++
++function storage() {
++	const devices = [], volumes = [], mtd = [];
++	for (let path in fs.glob('/sys/class/mtd/mtd[0-9]*')) {
++		const name = fs.basename(path);
++		if (!match(name, /^mtd[0-9]+$/)) continue;
++		const row = { device: name, name: read(path + '/name', 128), type: read(path + '/type', 128) };
++		for (let attr in ['size', 'erasesize', 'writesize', 'oobsize', 'ecc_strength', 'ecc_step_size',
++			'bitflip_threshold', 'corrected_bits', 'ecc_failures', 'bad_blocks', 'bbt_blocks']) row[attr] = number(path + '/' + attr);
++		push(mtd, row);
++	}
++	for (let path in fs.glob('/sys/class/ubi/ubi[0-9]*')) {
++		const name = fs.basename(path);
++		if (match(name, /^ubi[0-9]+$/)) {
++			const row = { device: name };
++			for (let attr in ['mtd_num', 'eraseblock_size', 'total_eraseblocks', 'avail_eraseblocks',
++				'bad_peb_count', 'reserved_for_bad', 'max_ec', 'mean_ec', 'volumes_count']) row[attr] = number(path + '/' + attr);
++			push(devices, row);
++		} else if (match(name, /^ubi[0-9]+_[0-9]+$/)) {
++			const row = { volume: name, name: read(path + '/name', 128), type: read(path + '/type', 128) };
++			for (let attr in ['usable_eb_size', 'reserved_ebs', 'data_bytes', 'corrupted', 'upd_marker']) row[attr] = number(path + '/' + attr);
++			push(volumes, row);
++		}
++	}
++	const reader = read('/tmp/xsw250ns-fw_env.config', 512);
++	const env = command(['/usr/sbin/fw_printenv', '-n', 'ethaddr'], 256);
++	// Only expose a valid MAC, never raw output from an environment reader.
++	const mac = trim(env.text);
++	return { mtd: read('/proc/mtd', 6000), mounts: read('/proc/mounts', 12000),
++		space: command(['/bin/df', '-k', '/', '/rom', '/overlay', '/tmp'], 5000),
++		mtd_statistics: mtd, ubi_devices: devices, ubi_volumes: volumes,
++		usb_devices: command(['/usr/bin/lsusb'], 6000),
++		block_devices: command(['/sbin/block', 'info'], 6000),
++		rom_build: read('/rom/etc/xsw250ns-build-id', 256),
++		runtime_build: read('/etc/xsw250ns-build-id', 256),
++		reader_link: fs.readlink('/etc/fw_env.config'), rom_reader_link: fs.readlink('/rom/etc/fw_env.config'),
++		runtime_reader_valid: readerPatternValid(reader),
++		environment_mac: env.exit_code == 0 && match(mac, /^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$/) ? mac : null,
++		environment_mac_valid: env.exit_code == 0 && validMac(mac),
++		environment_read_exit: env.exit_code
++	};
++}
++
++function ports(bus) {
++	const devices = [];
++	for (let name in PORTS) {
++		const path = '/sys/class/net/' + name, stat = fs.stat(path);
++		if (!stat) { push(devices, { name, present: false }); continue; }
++		const counters = {};
++		for (let key in ['rx_bytes', 'tx_bytes', 'rx_packets', 'tx_packets', 'rx_errors', 'tx_errors',
++			'rx_dropped', 'tx_dropped', 'collisions', 'rx_crc_errors']) counters[key] = number(path + '/statistics/' + key);
++		push(devices, { name, present: true, mac: read(path + '/address', 64),
++			address_assignment_type: number(path + '/addr_assign_type'),
++			operstate: read(path + '/operstate', 64), carrier: number(path + '/carrier'),
++			speed_mbps: number(path + '/speed'), duplex: read(path + '/duplex', 64),
++			mtu: number(path + '/mtu'), carrier_changes: number(path + '/carrier_changes'), counters });
++	}
++	const interfaces = [], dump = call(bus, 'network.interface', 'dump');
++	for (let iface in dump?.interface ?? []) {
++		const row = subset(iface, ['interface', 'up', 'pending', 'available', 'autostart', 'uptime', 'proto',
++			'device', 'l3_device', 'metric', 'delegation', 'errors', 'inactive']);
++		delete row.inactive; // nested inactive data is not an allowlisted schema
++		for (let key in ['ipv4-address', 'ipv6-address', 'ipv6-prefix', 'route', 'dns-server'])
++			if (iface[key] != null) row[key] = iface[key];
++		push(interfaces, row);
++	}
++	return { devices, interfaces,
++		phy_2p5: command(['/usr/sbin/ethtool', 'lan2p5'], 7000),
++		phy_2p5_driver: command(['/usr/sbin/ethtool', '-i', 'lan2p5'], 2000),
++		phy_2p5_eee: command(['/usr/sbin/ethtool', '--show-eee', 'lan2p5'], 2000),
++		phy_2p5_statistics: command(['/usr/sbin/ethtool', '-S', 'lan2p5'], 8000),
++		routes: command(['/sbin/ip', 'route', 'show', 'table', 'all'], 6000),
++		ipv6_routes: command(['/sbin/ip', '-6', 'route', 'show', 'table', 'all'], 6000)
++	};
++}
++
++function wireless(bus) {
++	const status = call(bus, 'network.wireless', 'status'), radios = [];
++	for (let name, radio in status ?? {}) {
++		const config = subset(radio.config, ['band', 'channel', 'htmode', 'country', 'txpower', 'disabled']);
++		const interfaces = [];
++		for (let i in radio.interfaces ?? []) push(interfaces, { section: i.section, ifname: i.ifname,
++			config: subset(i.config, ['mode', 'network', 'disabled', 'isolate', 'encryption']) });
++		push(radios, { name, ...subset(radio, ['up', 'pending', 'autostart', 'disabled', 'retry_setup_failed']), config, interfaces });
++	}
++	return { status_available: status != null, radios,
++		devices: command(['/usr/sbin/iw', 'dev'], 8000),
++		capabilities: command(['/usr/sbin/iw', 'phy'], 16000),
++		driver_modules: join('\n', filter(split(read('/proc/modules', 30000) ?? '', '\n'),
++			line => !!match(line, /^(mt76|mt79|mac80211|cfg80211)/))) };
++}
++
++function services(bus) {
++	const list = call(bus, 'service', 'list'), rows = [];
++	for (let name in SERVICES) {
++		const instances = [];
++		for (let id, instance in list?.[name]?.instances ?? {})
++			push(instances, { id, ...subset(instance, ['running', 'pid', 'exit_code', 'respawn']) });
++		// registered=false does not imply a fault or even an installed package.
++		push(rows, { name, registered: list?.[name] != null, instances });
++	}
++	return { status_available: list != null, services: rows,
++		dns_resolvers: read('/tmp/resolv.conf.d/resolv.conf.auto', 3000),
++		firewall_tables: command(['/usr/sbin/nft', 'list', 'tables'], 4000),
++		connection_tracking: { count: number('/proc/sys/net/netfilter/nf_conntrack_count'),
++			maximum: number('/proc/sys/net/netfilter/nf_conntrack_max') },
++		time_sync: 'Xem trạng thái sysntpd và sự kiện đồng bộ giờ trong log; đồng hồ hợp lý chưa chứng minh đã đồng bộ NTP.',
++		note: 'Không gửi ping, truy vấn DNS, gọi API hoặc kết nối ra Internet. Có default route chưa chứng minh Internet hoạt động.' };
++}
++
++function logs() {
++	const kernel = command(['/bin/dmesg'], 96000, true), systemlog = command(['/sbin/logread', '-l', '180'], 64000, true);
++	const pattern = /(error|fail|warn|timeout|thermal|watchdog|panic|out of memory|oom|rcu.*stall|ubi|ubifs|squashfs|nand|nvmem|mt79|mt76|airoha|en8811|pcs|serdes|link is|link down|link up|segfault|firmware)/i;
++	const lines = filter(split(kernel.text, '\n'), line => !!match(line, pattern));
++	return { kernel: { ...kernel, text: join('\n', slice(lines, -160)), matched_lines: length(lines),
++			filtered: true, event_limit: 160 }, system: systemlog,
++		note: 'Log chỉ thuộc bộ đệm hiện tại; sự kiện cũ có thể đã xoay vòng. Một dòng lỗi lịch sử không chứng minh lỗi đang tiếp diễn.' };
++}
++
++export function assess(group, data) {
++	const findings = [];
++	const add = (level, title, evidence, advice) => push(findings, { level, title, evidence, advice });
++	if (group == 'system') {
++		const m = data.info?.memory;
++		if (m?.total > 0 && m?.available != null && m.available * 100 < m.total * 8)
++			add('warning', 'RAM khả dụng thấp', `${m.available}/${m.total} byte`, 'Đối chiếu OOM và tiến trình dùng RAM; một ảnh chụp không xác định được nguyên nhân.');
++		for (let t in data.thermal ?? []) if (t.temperature_millic != null && t.temperature_millic >= 95000)
++			add('warning', 'Nhiệt độ cao', `${t.zone}: ${t.temperature_millic / 1000} °C`, 'Kiểm tra thông gió và tải; ngưỡng bảo vệ thực tế thuộc kernel.');
++		if (!length(data.cpu_frequency ?? [])) add('info', 'Chưa có số liệu cpufreq', 'Không có policy trong sysfs', 'Không đồng nghĩa CPU ngừng hoạt động hoặc chạy sai tần số.');
++	} else if (group == 'storage') {
++		const mounts = data.mounts ?? '';
++		if (match(mounts, /\S+ \/overlay ubifs rw[, ]/))
++			add('info', 'Overlay UBIFS đã mount đọc/ghi', '/overlay: ubifs rw', 'Cần thử lưu cấu hình rồi reboot để xác minh tính bền vững; trang này không tự ghi thử.');
++		else add('warning', 'Chưa xác nhận overlay UBIFS đọc/ghi', 'Không thấy /overlay ubifs rw trong /proc/mounts', 'Recovery chạy RAM có thể không có overlay. Nếu đang boot từ NAND, kiểm tra mount và log UBI.');
++		if (match(mounts, /\S+ \/rom squashfs ro[, ]/)) add('info', 'SquashFS chỉ đọc là bình thường', '/rom: squashfs ro', 'Cấu hình cần được lưu qua overlay.');
++		if (!data.runtime_reader_valid) add('warning', 'Reader U-Boot chưa đúng mẫu dự kiến', 'Thiếu hoặc sai /tmp/xsw250ns-fw_env.config', 'Đối chiếu hook preinit và hai volume ubootenv/ubootenv2; không ghi lại bootloader.');
++		if (data.rom_build != null && data.runtime_build != data.rom_build)
++			add('warning', 'Build ID runtime khác lower image', 'Marker trong /etc khác /rom', 'Có thể overlay còn tệp từ bản cũ. Kiểm tra đúng firmware và hook trong /rom.');
++		if (data.environment_read_exit == 0 && data.environment_mac_valid === false)
++			add('warning', 'MAC trong environment không hợp lệ', data.environment_mac ?? 'Không có MAC Ethernet unicast hợp lệ', 'Đối chiếu MAC gốc trong backup riêng; không gán MAC mặc định dùng chung cho nhiều thiết bị.');
++		for (let m in data.mtd_statistics ?? []) if (m.ecc_failures > 0)
++			add('warning', 'MTD có bộ đếm ECC thất bại', `${m.device}: ecc_failures=${m.ecc_failures}`, 'Đây là bộ đếm tích lũy. Đối chiếu thời điểm/log đọc NAND và theo dõi tăng trước khi kết luận nguyên nhân.');
++		for (let d in data.ubi_devices ?? []) {
++			if (d.avail_eraseblocks == 0) add('info', 'UBI đã phân bổ hết PEB khả dụng', d.device + ': avail_eraseblocks=0', 'Không tự chứng minh filesystem đầy hoặc NAND hỏng; xem df và trạng thái volume.');
++			if (d.bad_peb_count > 0) add('warning', 'UBI có bad PEB', `${d.device}: ${d.bad_peb_count}`, 'NAND có thể có bad block từ nhà máy. Theo dõi số lượng tăng và lỗi ECC/UBIFS trước khi kết luận hỏng.');
++		}
++		for (let v in data.ubi_volumes ?? []) if (v.corrupted == 1 || v.upd_marker == 1)
++			add('warning', 'Volume cần kiểm tra', v.volume + ': corrupted/upd_marker được đánh dấu', 'Đối chiếu log UBI và tiến trình cập nhật; không tự format hoặc xóa volume.');
++	} else if (group == 'ports') {
++		for (let d in data.devices ?? []) {
++			if (d.present && match(d.name, /^eth[01]$/) && d.address_assignment_type == 1)
++				add('warning', 'Ethernet đang dùng MAC ngẫu nhiên', d.name + ': addr_assign_type=1', 'Firmware chưa nhận MAC cố định ở giao diện này; kiểm tra nguồn MAC và đối chiếu sau reboot.');
++			if (d.present && d.name == 'lan2p5' && d.carrier == 0)
++				add('info', 'Cổng 2.5G chưa có carrier', 'lan2p5: carrier=0', 'Có thể chưa cắm dây. Nếu đã cắm, kiểm tra dây, cổng đối diện và log; chưa đủ để quy lỗi PHY.');
++			if (d.counters?.rx_errors > 0 || d.counters?.tx_errors > 0)
++				add('warning', 'Có bộ đếm lỗi Ethernet', `${d.name}: RX=${d.counters.rx_errors ?? 0}, TX=${d.counters.tx_errors ?? 0}`, 'So sánh hai lần thu thập để biết lỗi có tăng; bộ đếm tích lũy không xác định thời điểm lỗi.');
++		}
++	} else if (group == 'wireless') {
++		if (!data.status_available) add('warning', 'Chưa đọc được trạng thái radio', 'network.wireless status không trả dữ liệu', 'Có thể dịch vụ đang khởi động hoặc RPC không sẵn sàng; xem log và module.');
++		for (let r in data.radios ?? []) if (r.retry_setup_failed)
++			add('warning', 'Radio khởi tạo thất bại', r.name + ': retry_setup_failed', 'Đối chiếu log mt76/MT7916, firmware và EEPROM; không tự thay calibration.');
++	} else if (group == 'services') {
++		if (!data.status_available) add('warning', 'Chưa đọc được trạng thái dịch vụ', 'service list không trả dữ liệu', 'Không coi dịch vụ không quan sát được là đã dừng.');
++		const c = data.connection_tracking;
++		if (c?.maximum > 0 && c.count != null && c.count * 100 > c.maximum * 90)
++			add('warning', 'Bảng conntrack gần đầy', `${c.count}/${c.maximum}`, 'Kiểm tra lưu lượng và số kết nối trước khi điều chỉnh giới hạn.');
++	} else if (group == 'logs') {
++		if (match(data.kernel?.text ?? '', /kernel panic|out of memory|oom-kill|rcu.*stall/i))
++			add('warning', 'Log có sự kiện hệ thống nghiêm trọng', 'Có panic/OOM/RCU stall trong bộ đệm', 'Đọc timestamp và ngữ cảnh; chưa xác định nguyên nhân chỉ bằng từ khóa.');
++	}
++	return findings;
++}
++
++export function collect(group) {
++	if (index(GROUPS, group) < 0) die('Nhóm chẩn đoán không hợp lệ.');
++	const board = read('/tmp/sysinfo/board_name', 256);
++	if (board != 'vnpt,xsw250ns-ubi') die('Chỉ hỗ trợ XSW250-NS UBI.');
++	const bus = connect(null, 1);
++	let data;
++	try {
++		if (group == 'system') data = system(bus);
++		else if (group == 'storage') data = storage();
++		else if (group == 'ports') data = ports(bus);
++		else if (group == 'wireless') data = wireless(bus);
++		else if (group == 'services') data = services(bus);
++		else data = logs();
++	} catch (e) { bus?.disconnect(); die(e); }
++	bus?.disconnect();
++	const hidden = hiddenValues();
++	return sanitize({ schema: 2, group, board, build: read('/etc/xsw250ns-build-id', 256),
++		uptime: read('/proc/uptime', 128), findings: assess(group, data), data,
++		limitations: ['PON/TEL chưa được hỗ trợ.', 'Chỉ quan sát, không tự sửa cấu hình, reboot hoặc ghi flash.',
++			'Không kiểm tra hỏng phần cứng bằng số liệu phần mềm đơn lẻ.',
++			'Báo cáo có MAC/IP, trạng thái mạng và log đã lọc; xem lại trước khi chia sẻ.'] }, hidden);
++}
+diff --git a/target/linux/airoha/an7581/base-files/usr/share/ucode/xsw250ns/state.uc b/target/linux/airoha/an7581/base-files/usr/share/ucode/xsw250ns/state.uc
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/usr/share/ucode/xsw250ns/state.uc
+@@ -0,0 +1,51 @@
++'use strict';
++
++import * as fs from 'fs';
++
++const DIR = '/var/run/xsw250ns';
++const STATE = DIR + '/status.json';
++const TEMP = DIR + '/status.json.new';
++
++function directory(create) {
++	if (create) fs.mkdir(DIR, 0o700);
++	const st = fs.lstat(DIR);
++	// /var/run is created by the OS and is not writable by unprivileged users.
++	// Never follow a substituted directory symlink, including on service restart.
++	if (st?.type != 'directory' || st.uid != 0) return false;
++	if (create && !fs.chmod(DIR, 0o700)) return false;
++	const now = fs.lstat(DIR);
++	return now && !now.perm.group_write && !now.perm.other_write;
++}
++
++export function readStatus() {
++	if (!directory(false)) return null;
++	const st = fs.lstat(STATE);
++	if (st?.type != 'file' || st.uid != 0 || st.perm.group_write || st.perm.other_write) return null;
++	const f = fs.open(STATE, 'r');
++	if (!f) return null;
++	const text = f.read(4096);
++	f.close();
++	return text == null ? null : trim(text);
++}
++
++export function writeStatus(status) {
++	if (!directory(true)) die('Unsafe runtime status directory.');
++	const previous = fs.lstat(TEMP);
++	if (previous && (previous.type != 'file' || previous.uid != 0)) die('Unsafe temporary status file.');
++	const text = sprintf('%J\n', status);
++	if (length(text) > 4096) die('Runtime status exceeds the size limit.');
++	const f = fs.open(TEMP, 'w', 0o600);
++	if (!f) die('Cannot open runtime status file.');
++	const written = f.write(text);
++	const flushed = f.flush();
++	f.close();
++	if (written != length(text) || !flushed || !fs.chmod(TEMP, 0o600) || !fs.rename(TEMP, STATE))
++		die('Cannot publish runtime status.');
++}
++
++export function removeStatus() {
++	if (directory(false)) {
++		fs.unlink(STATE);
++		fs.unlink(TEMP);
++	}
++}
+diff --git a/target/linux/airoha/an7581/base-files/www/luci-static/resources/view/status/include/98_xsw250ns_port_v2.js b/target/linux/airoha/an7581/base-files/www/luci-static/resources/view/status/include/98_xsw250ns_port_v2.js
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/www/luci-static/resources/view/status/include/98_xsw250ns_port_v2.js
+@@ -0,0 +1,98 @@
++'use strict';
++'require baseclass';
++'require rpc';
++'require uci';
++'require ui';
++'require xsw250ns.portrole as portrole';
++
++const board = rpc.declare({ object: 'system', method: 'board', expect: { '': {} } });
++const portStatus = rpc.declare({ object: 'luci.xsw250ns-port', method: 'status', expect: { '': {} }, reject: true });
++const access = rpc.declare({ object: 'session', method: 'access', params: ['scope', 'object', 'function'], expect: { access: false } });
++
++function hasChanges(changes) {
++	return Object.keys(changes).some(name => changes[name]?.length);
++}
++
++return baseclass.extend({
++	title: 'Cổng 2.5G LAN/WAN',
++
++	async load() {
++		const info = await board();
++		if (info.board_name != 'vnpt,xsw250ns-ubi')
++			return null;
++		if (this.busy)
++			return this.snapshot;
++		const data = await Promise.all([portStatus(), L.resolveDefault(access('uci', 'network', 'write'), false), L.resolveDefault(access('uci', 'firewall', 'write'), false)]);
++		if (data[0].error) throw new Error(data[0].error);
++		this.snapshot = [data[0].network, data[0].firewall, data[1], data[2]];
++		return this.snapshot;
++	},
++
++	async handleApply(role) {
++		if (this.busy)
++			return;
++		this.busy = true;
++		try {
++			if (hasChanges(await uci.changes()))
++				throw new Error('Đang có thay đổi chưa áp dụng. Hãy áp dụng hoặc hoàn tác các thay đổi đó trước.');
++			if (!await access('uci', 'network', 'write') || !await access('uci', 'firewall', 'write'))
++				throw new Error('Tài khoản không có quyền sửa cấu hình mạng.');
++			// Use a separate cursor so polling and other status cards keep their state.
++			const cursor = new uci.constructor();
++			await cursor.load(['network', 'firewall']);
++			const values = name => {
++				const result = {};
++				cursor.sections(name, null, s => { result[s['.name']] = s; });
++				return result;
++			};
++			const ops = portrole.plan(values('network'), values('firewall'), role);
++			if (!ops.length)
++				return;
++			for (const op of ops) {
++				if (op.type) cursor.add(op.config, op.type, op.section);
++				else if (op.remove) cursor.remove(op.config, op.section);
++				else if (op.value == null) cursor.unset(op.config, op.section, op.option);
++				else cursor.set(op.config, op.section, op.option, op.value);
++			}
++			if (hasChanges(await uci.changes()))
++				throw new Error('Có thay đổi cấu hình mới từ phiên này. Hãy xử lý thay đổi đang chờ trước.');
++			await cursor.save();
++			await ui.changes.init();
++			this.selectedRole = null;
++			ui.changes.apply(true);
++		} catch (error) {
++			ui.addNotification(null, E('p', {}, error.message || String(error)), 'error');
++		} finally {
++			this.busy = false;
++		}
++	},
++
++	render(data) {
++		if (!data)
++			return null;
++		const status = portrole.inspect(data[0], data[1]);
++		const labels = { lan: 'LAN — cùng mạng với 4 cổng LAN 1G', wan: 'WAN — kết nối Internet', unused: 'Chưa gán vai trò', custom: 'Cấu hình tùy chỉnh' };
++		const writable = data[2] && data[3];
++		const selected = this.selectedRole || (status.role == 'lan' ? 'lan' : 'wan');
++		const select = E('select', { 'class': 'cbi-input-select', 'disabled': this.busy || !writable || !status.supported ? true : null }, [
++			E('option', { value: 'lan', selected: selected == 'lan' ? true : null }, 'LAN'),
++			E('option', { value: 'wan', selected: selected == 'wan' ? true : null }, 'WAN')
++		]);
++		const button = E('button', {
++			'class': 'cbi-button cbi-button-apply',
++			'disabled': this.busy || !writable || !status.supported || selected == status.role ? true : null,
++			'click': ui.createHandlerFn(this, () => this.handleApply(select.value))
++		}, 'Lưu & áp dụng');
++		select.addEventListener('change', () => {
++			this.selectedRole = select.value;
++			button.disabled = this.busy || !writable || !status.supported || select.value == status.role;
++		});
++		return E('div', {}, [
++			E('p', {}, ['Vai trò hiện tại: ', E('strong', {}, labels[status.role])]),
++			E('div', { 'class': 'cbi-value' }, [select, ' ', button]),
++			E('p', { 'class': 'cbi-value-description' }, status.reason || 'Cắm máy tính quản trị vào một cổng LAN 1G trước khi chuyển. Chuyển sang LAN sẽ ngắt đường Internet qua cổng 2.5G; chuyển lại WAN sẽ giữ cấu hình WAN đã có, hoặc dùng DHCP nếu chưa có.'),
++			!writable ? E('p', {}, 'Tài khoản hiện tại chỉ có quyền xem.') : null,
++			E('a', { href: L.url('admin/network/network') }, 'Cấu hình mạng nâng cao')
++		]);
++	}
++});
+diff --git a/target/linux/airoha/an7581/base-files/www/luci-static/resources/view/system/startup-xsw250ns-v2.js b/target/linux/airoha/an7581/base-files/www/luci-static/resources/view/system/startup-xsw250ns-v2.js
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/www/luci-static/resources/view/system/startup-xsw250ns-v2.js
+@@ -0,0 +1,7 @@
++'use strict';'require view';'require rpc';'require fs';'require ui';var isReadonlyView=!L.hasViewPermission()||null;return view.extend({callRcList:rpc.declare({object:'rc',method:'list',params:['skip_running_check'],expect:{'':{}}}),callRcInit:rpc.declare({object:'rc',method:'init',params:['name','action'],}),load:function(){return Promise.all([L.resolveDefault(fs.read('/etc/rc.local'),''),this.callRcList(true)]);},handleAction:function(name,action,ev){return this.callRcInit(name,action).then(function(ret){if(ret)
++throw _('Command failed');return true;}).catch(function(e){ui.addNotification(null,E('p',_('Failed to execute "/etc/init.d/%s %s" action: %s').format(name,action,e)));});},handleEnableDisable:function(name,isEnabled,ev){return this.handleAction(name,isEnabled?'disable':'enable',ev).then(L.bind(function(name,isEnabled,btn){btn.parentNode.replaceChild(this.renderEnableDisable({name:name,enabled:isEnabled}),btn);},this,name,!isEnabled,ev.currentTarget));},handleRcLocalSave:function(ev){var value=(document.querySelector('textarea').value||'').trim().replace(/\r\n/g,'\n')+'\n';return fs.write('/etc/rc.local',value).then(function(){document.querySelector('textarea').value=value;ui.addNotification(null,E('p',_('Contents have been saved.')),'info');}).catch(function(e){ui.addNotification(null,E('p',_('Unable to save contents: %s').format(e.message)));});},renderEnableDisable:function(init){return E('button',{class:'btn cbi-button-%s'.format(init.enabled?'positive':'negative'),click:ui.createHandlerFn(this,'handleEnableDisable',init.name,init.enabled),disabled:isReadonlyView},init.enabled?_('Enabled'):_('Disabled'));},render:function(data){var rcLocal=data[0],initList=data[1],rows=[],list=[];var table=E('table',{'class':'table'},[E('tr',{'class':'tr table-titles'},[E('th',{'class':'th'},_('Start priority')),E('th',{'class':'th'},_('Initscript')),E('th',{'class':'th nowrap cbi-section-actions'})])]);for(var init in initList)
++if(initList[init].start<100)
++list.push(Object.assign({name:init},initList[init]));list.sort(function(a,b){if(a.start!=b.start)
++return a.start-b.start
++return a.name>b.name;});for(var i=0;i<list.length;i++){rows.push(['%02d'.format(list[i].start),list[i].name,E('div',[this.renderEnableDisable(list[i]),E('button',{'class':'btn cbi-button-action','click':ui.createHandlerFn(this,'handleAction',list[i].name,'start'),'disabled':isReadonlyView},_('Start','daemon start action')),E('button',{'class':'btn cbi-button-action','click':ui.createHandlerFn(this,'handleAction',list[i].name,'restart'),'disabled':isReadonlyView},_('Restart','daemon restart action')),E('button',{'class':'btn cbi-button-action','click':ui.createHandlerFn(this,'handleAction',list[i].name,'reload'),'disabled':isReadonlyView},_('Reload','daemon reload action')),E('button',{'class':'btn cbi-button-action','click':ui.createHandlerFn(this,'handleAction',list[i].name,'stop'),'disabled':isReadonlyView},_('Stop','daemon stop action'))])]);}
++cbi_update_table(table,rows);var view=E('div',{},[E('h2',_('Startup')),E('div',{},[E('div',{'class':'cbi-section','data-tab':'init','data-tab-title':_('Initscripts')},[E('p',{},_('You can enable or disable installed init scripts here. Changes will be applied after a device reboot.<br /><strong>Warning: If you disable essential init scripts like "network", your device might become inaccessible!</strong>')),table]),E('div',{'class':'cbi-section','data-tab':'rc','data-tab-title':_('Local Startup')},[E('p',{},_('This is the content of /etc/rc.local. Insert your own commands here (in front of \'exit 0\') to execute them at the end of the boot process.')),E('p',{},E('textarea',{'style':'width:100%','rows':20,'disabled':isReadonlyView},[(rcLocal!=null?rcLocal:'')])),E('div',{'class':'cbi-page-actions'},[E('button',{'class':'btn cbi-button-save','click':ui.createHandlerFn(this,'handleRcLocalSave'),'disabled':isReadonlyView},_('Save'))])])])]);ui.tabs.initTabGroup(view.lastElementChild.childNodes);return view;},handleSaveApply:null,handleSave:null,handleReset:null});
+diff --git a/target/linux/airoha/an7581/base-files/www/luci-static/resources/view/system/xsw250ns-status-v2.js b/target/linux/airoha/an7581/base-files/www/luci-static/resources/view/system/xsw250ns-status-v2.js
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/www/luci-static/resources/view/system/xsw250ns-status-v2.js
+@@ -0,0 +1,51 @@
++'use strict';
++'require view';
++'require form';
++'require rpc';
++'require poll';
++'require uci';
++
++const status = rpc.declare({ object: 'luci.xsw250ns-status', method: 'status', expect: { data: '' }, reject: true });
++
++return view.extend({
++	load() { return uci.load('xsw250ns_status'); },
++
++	async render() {
++		const current = E('p', {}, 'Đang đọc trạng thái…');
++		const refresh = async () => {
++			try {
++				const s = JSON.parse(await status());
++				current.textContent = 'CPU: ' + (s.temperature_millic == null ? 'không đọc được cảm biến' : (s.temperature_millic / 1000).toFixed(1) + '°C') +
++					' · TEL1: ' + (!s.tel1_present ? 'chưa có LED GPIO' : s.temperature_millic == null ? 'lỗi cảm biến' : s.overheat ? 'cảnh báo nóng' : 'bình thường') +
++					' · TEL2: ' + (!s.tel2_present ? 'chưa có LED GPIO' : s.tel2_mode == 'off' ? 'tắt' : s.online === true ? 'kết nối được' : s.online === false ? 'không kết nối được' : 'đang kiểm tra');
++			} catch (e) { current.textContent = 'Chưa có trạng thái: dịch vụ đang tắt hoặc chưa khởi động. LED vật lý cần DTB của ITB r3.'; }
++		};
++		await refresh(); poll.add(refresh, 5);
++		const m = new form.Map('xsw250ns_status', 'LED & Kết nối — XSW250-NS', 'Wi-Fi 2.4G/5G dùng GPIO từ bảng 7581ptled.conf của firmware gốc; sáng khi radio bật. Có thể đổi trigger tại Hệ thống → LED. TEL1/TEL2 dưới đây do dịch vụ trạng thái quản lý.');
++		// Use the page permission already supplied by LuCI, including read-only logins.
++		m.readonly = !L.hasViewPermission();
++		const s = m.section(form.NamedSection, 'main', 'status', 'Đèn TEL dùng làm trạng thái');
++		s.addremove = false;
++		let o = s.option(form.Flag, 'enabled', 'Bật dịch vụ LED trạng thái'); o.rmempty = false;
++		o = s.option(form.Flag, 'tel1_enabled', 'TEL1: cảnh báo nhiệt CPU'); o.rmempty = false;
++		o = s.option(form.Value, 'temp_on', 'Sáng từ nhiệt độ (°C)'); o.datatype = 'range(60,115)'; o.rmempty = false;
++		o = s.option(form.Value, 'temp_off', 'Tắt khi thấp hơn (°C)'); o.datatype = 'range(40,114)'; o.rmempty = false;
++		o.validate = function(section, value) {
++			const on = this.map.lookupOption('temp_on', section)[0]?.formvalue(section);
++			return +value < +on ? true : 'Ngưỡng tắt phải thấp hơn ngưỡng sáng.';
++		};
++		o = s.option(form.ListValue, 'tel2_mode', 'TEL2');
++		o.value('internet', 'Kiểm tra Internet qua ICMP');
++		o.value('link', 'Có interface với đường mặc định');
++		o.value('off', 'Tắt'); o.rmempty = false;
++		o = s.option(form.Value, 'interval', 'Chu kỳ kiểm tra (giây)'); o.datatype = 'range(10,300)'; o.rmempty = false;
++		for (const key of ['target1', 'target2']) {
++			o = s.option(form.Value, key, key == 'target1' ? 'Đích ICMP thứ nhất' : 'Đích ICMP dự phòng');
++			o.datatype = 'or(hostname,ip4addr)'; o.rmempty = false; o.depends('tel2_mode', 'internet');
++		}
++		return E('div', {}, [E('h2', {}, 'Trạng thái LED'), current,
++			E('p', {}, 'TEL1 mặc định sáng từ 100°C, tắt dưới 95°C; nhấp nháy nếu không đọc được cảm biến. Không thay đổi cơ chế bảo vệ nhiệt của kernel. Không cần làm nóng router để thử đèn.'),
++			E('p', {}, 'TEL2 sáng khi kiểm tra thành công hai lần liên tiếp; nhấp nháy sau ba lần thất bại. Trong lúc chưa có kết quả cũng nhấp nháy. ICMP bị chặn có thể báo mất mạng dù web vẫn vào được; khi đó dùng chế độ đường mặc định. Dịch vụ không tự khởi động lại router hoặc interface.'),
++			await m.render()]);
++	}
++});
+diff --git a/target/linux/airoha/dts/an7581-vnpt-xsw250ns-ubi.dts b/target/linux/airoha/dts/an7581-vnpt-xsw250ns-ubi.dts
+new file mode 100644
+--- /dev/null
++++ b/target/linux/airoha/dts/an7581-vnpt-xsw250ns-ubi.dts
+@@ -0,0 +1,302 @@
++// SPDX-License-Identifier: GPL-2.0-only OR MIT
++/dts-v1/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/leds/common.h>
++#include "an7581.dtsi"
++
++/ {
++	model = "VNPT iGate XSW250-NS (UBI)";
++	compatible = "vnpt,xsw250ns-ubi", "airoha,an7581", "airoha,en7581";
++
++	aliases {
++		ethernet0 = &gdm1;
++		ethernet1 = &gdm4;
++		serial0 = &uart1;
++		led-boot = &led_power;
++		led-failsafe = &led_power;
++		led-running = &led_power;
++		led-upgrade = &led_power;
++	};
++
++	chosen {
++		rootdisk = <&ubi_fit>;
++		bootargs = "console=ttyS0,115200 earlycon";
++		stdout-path = "serial0:115200n8";
++		linux,usable-memory-range = <0 0x80200000 0 0x1fe00000>;
++	};
++
++	memory@80000000 {
++		device_type = "memory";
++		reg = <0 0x80000000 0 0x20000000>;
++	};
++
++	keys {
++		compatible = "gpio-keys";
++		reset {
++			label = "reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&en7581_pinctrl 0 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++		led_power: power {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_POWER;
++			gpios = <&en7581_pinctrl 17 GPIO_ACTIVE_LOW>;
++		};
++		/* The user's stock boot log selects /userfs/7581ptled.conf. */
++		wlan-2g {
++			label = "xsw250ns:wlan-2g";
++			gpios = <&en7581_pinctrl 15 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "phy0radio";
++			default-state = "off";
++		};
++		wlan-5g {
++			label = "xsw250ns:wlan-5g";
++			gpios = <&en7581_pinctrl 41 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "phy1radio";
++			default-state = "off";
++		};
++		tel1 {
++			label = "xsw250ns:tel1";
++			gpios = <&en7581_pinctrl 24 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++		tel2 {
++			label = "xsw250ns:tel2";
++			gpios = <&en7581_pinctrl 33 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++	};
++};
++
++&en7581_pinctrl {
++	gpio-ranges = <&en7581_pinctrl 0 13 50>;
++	/* LAN LED muxes match the working XSW050NS reference DT. */
++	gswp1_led0_pins: gswp1-led0-pins {
++		mux { function = "phy1_led0"; pins = "gpio43"; };
++	};
++	gswp2_led0_pins: gswp2-led0-pins {
++		mux { function = "phy2_led0"; pins = "gpio44"; };
++	};
++	gswp3_led0_pins: gswp3-led0-pins {
++		mux { function = "phy3_led0"; pins = "gpio45"; };
++	};
++	gswp4_led0_pins: gswp4-led0-pins {
++		mux { function = "phy4_led0"; pins = "gpio46"; };
++	};
++	mdio_pins: mdio-pins {
++		mux {
++			function = "mdio";
++			groups = "mdio";
++		};
++		conf {
++			pins = "gpio2";
++			output-high;
++		};
++	};
++
++	pcie0_rst_pins: pcie0-rst-pins {
++		conf {
++			pins = "pcie_reset0";
++			drive-open-drain = <1>;
++		};
++	};
++
++	pcie1_rst_pins: pcie1-rst-pins {
++		conf {
++			pins = "pcie_reset1";
++			drive-open-drain = <1>;
++		};
++	};
++};
++
++&snfi { status = "okay"; };
++
++&spi_nand {
++	/* Match the supplied U-Boot and vendor on-die ECC configuration. */
++	nand-ecc-mode = "none";
++	nand-ecc-step-size = <2048>;
++	nand-ecc-strength = <0>;
++
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		partition@0 {
++			label = "bl2";
++			reg = <0 0x20000>;
++			read-only;
++		};
++
++		partition@20000 {
++			label = "ubi";
++			reg = <0x20000 0xdda0000>;
++			compatible = "linux,ubi";
++			volumes {
++				ubi_fit: ubi-volume-fit { volname = "fit"; };
++				ubi-volume-fip { volname = "fip"; };
++				ubi-volume-ubootenv { volname = "ubootenv"; };
++				ubi-volume-ubootenv2 { volname = "ubootenv2"; };
++			};
++		};
++
++		reservearea: partition@ddc0000 {
++			label = "reservearea";
++			reg = <0xddc0000 0x240000>;
++			read-only;
++			nvmem-layout {
++				compatible = "fixed-layout";
++				#address-cells = <1>;
++				#size-cells = <1>;
++				eeprom: eeprom@4c000 { reg = <0x4c000 0x1000>; };
++			};
++		};
++
++		partition@e000000 {
++			label = "reserved-bmt";
++			reg = <0xe000000 0x2000000>;
++			read-only;
++		};
++	};
++};
++
++&npu { status = "okay"; };
++&eth { status = "okay"; };
++&gdm1 { status = "okay"; };
++&eth_pcs { status = "okay"; };
++
++&mdio {
++	en8811: ethernet-phy@f {
++		compatible = "ethernet-phy-id03a2.a411";
++		reg = <15>;
++		/* Shared XSW-050NS/250NS board wiring; validate on hardware. */
++		reset-gpios = <&en7581_pinctrl 27 GPIO_ACTIVE_LOW>;
++		reset-assert-us = <100000>;
++		reset-deassert-us = <20000>;
++	};
++};
++
++&switch {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&mdio_pins>;
++};
++
++/* Physical jack numbering must be confirmed on hardware. */
++&gsw_port1 { status = "okay"; label = "lan1"; };
++&gsw_port2 { status = "okay"; label = "lan2"; };
++&gsw_port3 { status = "okay"; label = "lan3"; };
++&gsw_port4 { status = "okay"; label = "lan4"; };
++&gsw_phy1 {
++	status = "okay";
++	interrupts = <1>;
++	pinctrl-names = "gbe-led";
++	pinctrl-0 = <&gswp1_led0_pins>;
++};
++&gsw_phy2 {
++	status = "okay";
++	interrupts = <2>;
++	pinctrl-names = "gbe-led";
++	pinctrl-0 = <&gswp2_led0_pins>;
++};
++&gsw_phy3 {
++	status = "okay";
++	interrupts = <3>;
++	pinctrl-names = "gbe-led";
++	pinctrl-0 = <&gswp3_led0_pins>;
++};
++&gsw_phy4 {
++	status = "okay";
++	interrupts = <4>;
++	pinctrl-names = "gbe-led";
++	pinctrl-0 = <&gswp4_led0_pins>;
++};
++
++&gsw_phy1_led0 {
++	status = "okay";
++	color = <LED_COLOR_ID_GREEN>;
++	function = LED_FUNCTION_LAN;
++	function-enumerator = <1>;
++	active-low;
++};
++&gsw_phy2_led0 {
++	status = "okay";
++	color = <LED_COLOR_ID_GREEN>;
++	function = LED_FUNCTION_LAN;
++	function-enumerator = <2>;
++	active-low;
++};
++&gsw_phy3_led0 {
++	status = "okay";
++	color = <LED_COLOR_ID_GREEN>;
++	function = LED_FUNCTION_LAN;
++	function-enumerator = <3>;
++	active-low;
++};
++&gsw_phy4_led0 {
++	status = "okay";
++	color = <LED_COLOR_ID_GREEN>;
++	function = LED_FUNCTION_LAN;
++	function-enumerator = <4>;
++	active-low;
++};
++
++/* EN7581 has #thermal-sensor-cells = <0>, so no index follows. */
++&cpu_thermal {
++	thermal-sensors = <&thermal>;
++};
++
++&gdm4 {
++	status = "okay";
++	openwrt,netdev-name = "lan2p5";
++	phy-mode = "2500base-x";
++	phy-handle = <&en8811>;
++};
++
++/* 0000:01:00.0 is the MT7916 HIF; 0001:01:00.0 is the main radio. */
++&pcie0 {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie0_rst_pins>;
++};
++
++&pcie1 {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie1_rst_pins>;
++	pcie@0,0 {
++		reg = <0 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges;
++
++		wifi@0,0 {
++			compatible = "mediatek,mt76";
++			reg = <0 0 0 0 0>;
++			nvmem-cells = <&eeprom>;
++			nvmem-cell-names = "eeprom";
++		};
++	};
++};
++
++/* Modified board: D+/D- only. Do not claim the shared USB3/PCIe SerDes.
++ * Both USB2 roots are enabled because the mod photos do not identify the root.
++ * VBUS is supplied by the external 5V hardware mod; no guessed GPIO control. */
++&usb0 {
++	status = "okay";
++	maximum-speed = "high-speed";
++	phys = <&usb0_phy PHY_TYPE_USB2>;
++	mediatek,u3p-dis-msk = <1>;
++};
++&usb1 {
++	status = "okay";
++	maximum-speed = "high-speed";
++	phys = <&usb1_phy PHY_TYPE_USB2>;
++	mediatek,u3p-dis-msk = <1>;
++};
