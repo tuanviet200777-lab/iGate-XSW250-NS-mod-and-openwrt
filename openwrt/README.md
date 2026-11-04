@@ -1,11 +1,12 @@
-# XSW250-NS: native ImmortalWrt build and NAND preinit fix
+# XSW250-NS r4: diagnostics-only LuCI and NAND preinit fix
+
+Current build ID: `xsw250ns-20261104-r4-diag-nand1`. The old AI/API-key/chat and JSON hotfix feature has been removed, including its worker, policy module, write ACL, RPC endpoints and S18 recovery service. LuCI **System → Chẩn đoán hệ thống** now collects six detailed read-only groups on demand, with findings and JSON export. See [Vietnamese guide](docs/DIAGNOSTICS.vi.md). MAC/IP remain in the report; review it before sharing.
 
 This directory supplies the source changes for `vnpt,xsw250ns-ubi`. It is a board port on ImmortalWrt, not an upstream-supported OpenWrt device profile.
 
 - Base: `tuanviet200777-lab/immortalwrt` at `e695009c15c623f4f6a83376b505faaf7a4ae5b5`.
 - Target: `airoha/an7581`, kernel 6.18.55, MT7916, EN8811H, four LAN ports plus a 2.5G port.
-- Full board patch: `patches/xsw250ns-support-r3-nand1.patch` (apply once to the pinned base).
-- Incremental patch: `patches/nand-only-on-r3.patch` (only for a tree already carrying the previous complete r3 patch).
+- Full board patch: `patches/xsw250ns-support-r4-diag.patch` (apply once to the pinned base).
 - Build config and all five feed revisions: `config/`.
 - Prior results: `evidence/`; these distinguish static/MSYS checks from hardware observations.
 

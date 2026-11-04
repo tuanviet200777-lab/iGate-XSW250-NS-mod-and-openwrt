@@ -1,8 +1,8 @@
-# Cloud continuation: XSW250-NS native build and preinit validation
+# Cloud continuation: XSW250-NS r4 diagnostics-only native build
 
 ## Objective
 
-Continue the user's XSW250-NS firmware work on Linux. Validate the reviewed NAND preinit correction, fix any actual defects found, build recovery and sysupgrade natively, and leave source changes and reproducible evidence for review. Do not claim a physical-device test without one.
+Continue the user's XSW250-NS firmware work on Linux. The current source is r4 diagnostics-only: apply `patches/xsw250ns-support-r4-diag.patch`. The user explicitly removed the AI/API/chat and JSON hotfix feature; do not restore them. Check all six diagnostic groups, missing-data behavior, read-only ACL, secret filtering, removal of retained-overlay files/credentials, startup ordering of S00 retirement before old S18, and stale overlay build IDs. Preserve the existing NAND reader fix. Native builds must produce both updated recovery and sysupgrade, with no retired files in either image. Validate the reviewed NAND preinit correction, fix any actual defects found, build recovery and sysupgrade natively, and leave source changes and reproducible evidence for review. Do not claim a physical-device test without one.
 
 ## Repositories and starting point
 

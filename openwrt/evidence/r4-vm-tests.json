@@ -1,0 +1,50 @@
+{
+  "platform": "QEMU virt ARM64, existing seed userland; no NAND or router hardware",
+  "ucode_compilation": true,
+  "backend_assertions": 38,
+  "rpc_groups": [
+    "system",
+    "storage",
+    "ports",
+    "wireless",
+    "services",
+    "logs"
+  ],
+  "collector_preserves_uci": true,
+  "invalid_group_rejected": true,
+  "legacy_cleanup_board_guard": true,
+  "legacy_cleanup_removes_credentials": true,
+  "legacy_cleanup_preserves_unrelated_data": true,
+  "legacy_cleanup_idempotent": true,
+  "retained_build_marker_refreshed": true,
+  "readonly_login_access": {
+    "luci.xsw250ns-diagnostics.collect": true,
+    "session.access": true,
+    "luci.getFeatures": true,
+    "luci.xsw250ns-diagnostics.apply": false,
+    "network.reload": false,
+    "file.exec": false
+  },
+  "readonly_luci_bootstrap_read_groups": [
+    "unauthenticated",
+    "luci-base",
+    "luci-xsw250ns-diagnostics"
+  ],
+  "readonly_http_rpc_result_codes": {
+    "session.access": 0,
+    "luci.getFeatures": 0,
+    "luci.xsw250ns-diagnostics.collect": 0
+  },
+  "tested_source_sha256": {
+    "etc/xsw250ns-build-id": "88d8e2610a79254a3f42b3726773496c3bceb65fc90ba7f40990844a4c4542e9",
+    "www/luci-static/resources/view/system/xsw250ns-diagnostics.js": "c4b77057e70952fd4cb6041392bb72f46df35a4399d0d518750afdcbb8d03ec3",
+    "usr/share/ucode/xsw250ns/diagnostics.uc": "5ed2c89bf445d49a7d1824e6055891103e8bec063077181f38d9ad89178c7d78",
+    "usr/share/rpcd/acl.d/luci-xsw250ns-diagnostics.json": "539cdf1609e3b1e5330ebd0b1d0fafe5652d62b59e66bb8fbff83d1c379d2043",
+    "usr/share/rpcd/ucode/luci.xsw250ns-diagnostics": "fda82a92290f4239809728d49723e08ca8575f8b62ce4d791c6d7623690ff6d3",
+    "usr/share/luci/menu.d/luci-xsw250ns-diagnostics.json": "802071cd9253c1ea022d13d8243d1adbcd41079ee2ba0066b06bcfdec84fb534",
+    "etc/init.d/xsw250ns-retire-legacy": "1fea2e2150f4e56a10fb81e2927c7445dd962405957a80a50f5321755f2f1eec",
+    "etc/uci-defaults/98-xsw250ns-diagnostics": "66240fe0907c663f4b9af029817948d846dd51c2e958500bd0f2a3f93f0eeb52"
+  },
+  "hardware_boot_tested": false,
+  "http_url": "http://127.0.0.1:18081"
+}

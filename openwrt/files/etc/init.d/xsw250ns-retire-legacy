@@ -1,0 +1,33 @@
+#!/bin/sh /etc/rc.common
+# Remove the retired UI/RPC/worker even when an older add-on survives in overlay.
+# Runs after mount_root and before the former S18 recovery service.
+START=00
+STOP=90
+
+start() {
+	[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = 'vnpt,xsw250ns-ubi' ] || return 0
+	if [ -f /etc/xsw250ns-hotfix/pending.json ]; then
+		logger -t xsw250ns-diagnostics 'Retired feature had a pending transaction; existing network configuration was left unchanged. Verify connectivity.'
+	fi
+	# All targets are fixed retired-feature paths. No UCI changes or service reloads.
+	rm -f /etc/rc.d/S18xsw250ns-hotfix /etc/rc.d/K89xsw250ns-hotfix \
+		/etc/init.d/xsw250ns-hotfix /etc/uci-defaults/98-xsw250ns-hotfix \
+		/usr/libexec/xsw250ns-hotfix \
+		/usr/share/luci/menu.d/luci-xsw250ns-hotfix.json \
+		/usr/share/rpcd/acl.d/luci-xsw250ns-hotfix.json \
+		/usr/share/rpcd/ucode/luci.xsw250ns-hotfix \
+		/usr/share/ucode/xsw250ns/hotfix.uc /usr/share/ucode/xsw250ns/policy.uc \
+		/www/luci-static/resources/view/system/xsw250ns-hotfix.js
+	# Includes retired API credentials and add-on backups; never copy them to reports.
+	rm -rf /etc/xsw250ns-hotfix /etc/xsw250ns-hotfix-install-backup
+	# An old add-on may have left its build ID in overlay. Refresh only this
+	# firmware-owned marker from the new immutable lower image, when available.
+	if [ "$(cat /rom/etc/xsw250ns-build-id 2>/dev/null)" = 'xsw250ns-20261104-r4-diag-nand1' ]; then
+		cmp -s /rom/etc/xsw250ns-build-id /etc/xsw250ns-build-id ||
+			cp /rom/etc/xsw250ns-build-id /etc/xsw250ns-build-id
+	fi
+	# Clear generated LuCI indexes so the retired menu cannot linger after upgrade.
+	rm -f /tmp/luci-indexcache /tmp/luci-indexcache.*
+	rm -rf /tmp/luci-modulecache
+	return 0
+}
