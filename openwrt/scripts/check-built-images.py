@@ -21,8 +21,10 @@ assert (root/'etc/xsw250ns-build-id').read_text().strip()=='xsw250ns-20261104-r5
 assert (root/'etc/fw_env.config').is_symlink()
 assert str((root/'etc/fw_env.config').readlink())=='/tmp/xsw250ns-fw_env.config'
 assert hashlib.sha256((root/'etc/board.d/04_xsw250ns_ubootenv').read_bytes()).hexdigest()=='d5f7da4aa0809654cb491e04a1064ef181dde1dec54865008050fe2f380ef9c2'
-for path in ['sbin/block','usr/bin/lsusb','usr/sbin/smbd','usr/bin/testparm','usr/sbin/openvpn','usr/share/rpcd/ucode/luci.xsw250ns-port','usr/share/rpcd/ucode/luci.xsw250ns-status','usr/share/ucode/xsw250ns/state.uc','www/luci-static/resources/view/system/startup-xsw250ns-v2.js']:
+for path in ['sbin/block','usr/libexec/lsusb-usbutils','usr/sbin/smbd','usr/bin/testparm','usr/sbin/openvpn','usr/share/rpcd/ucode/luci.xsw250ns-port','usr/share/rpcd/ucode/luci.xsw250ns-status','usr/share/ucode/xsw250ns/state.uc','www/luci-static/resources/view/system/startup-xsw250ns-v2.js']:
     assert (root/path).is_file(),path
+assert (root/'usr/bin/lsusb').is_symlink()
+assert str((root/'usr/bin/lsusb').readlink())=='/usr/libexec/lsusb-usbutils'
 for module in ['usb-storage.ko','uas.ko','xhci-hcd.ko','xhci-mtk-hcd.ko','exfat.ko','ntfs3.ko','vfat.ko']:
     assert list((root/'lib/modules').rglob(module)),module
 acl=json.loads((root/'usr/share/rpcd/acl.d/luci-xsw250ns-port.json').read_text())
