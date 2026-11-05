@@ -191,12 +191,14 @@ static int write_verified(struct mtd_info *mtd, unsigned int index)
 {
 	const struct stock_file *f = &stock_files[index];
 	u8 *data = file_data[index];
-	u32 pos;
+	u32 pos, step;
 	size_t actual;
 	int ret;
 
 	printf("Restoring %s at 0x%x...\n", f->name, f->offset);
-	for (pos = 0; pos < f->size; pos += SZ_128K) {
+	for (step = 0; step < f->size; step += SZ_128K) {
+		/* Retain the current primary BL2 block until the final operation. */
+		pos = index == 0 ? f->size - SZ_128K - step : step;
 		struct erase_info erase = { .addr = f->offset + pos, .len = SZ_128K };
 
 		if (mtd_block_isbad(mtd, erase.addr))

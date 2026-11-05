@@ -31,6 +31,8 @@ jobs:
         run: |
           set -o pipefail
           make ARCH=arm CROSS_COMPILE=aarch64-linux-gnu- an7581_xsw250ns_usb_stock_defconfig
+          python3 "$GITHUB_WORKSPACE/uboot/scripts/check-config.py" .config
+          cp .config resolved.config
           make -j4 ARCH=arm CROSS_COMPILE=aarch64-linux-gnu- 2>&1 | tee "$RUNNER_TEMP/xsw250ns-uboot-build.log"
       - name: Preserve compiled candidate before checking
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -40,7 +42,7 @@ jobs:
             ${{ runner.temp }}/xsw250ns-uboot/u-boot.bin
             ${{ runner.temp }}/xsw250ns-uboot/u-boot.dtb
             ${{ runner.temp }}/xsw250ns-uboot/u-boot
-            ${{ runner.temp }}/xsw250ns-uboot/.config
+            ${{ runner.temp }}/xsw250ns-uboot/resolved.config
             ${{ runner.temp }}/xsw250ns-uboot/xsw250ns-source-provenance.json
       - name: Package FIP with the original BL31
         shell: bash

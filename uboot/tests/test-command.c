@@ -10,6 +10,7 @@ static int fail_erase,fail_write,fail_readback,fail_identity,wrong_board,wrong_g
 static int cancel,usb_unavailable,detach_failure,erase_count,write_count,reset_count,usb_starts;
 static int bootloader_seen,write_region_count,previous_region=-1;
 static unsigned int observed_regions[8];
+static uint64_t last_write_offset;
 static int total_tests;
 static const char *current_name;
 
@@ -87,7 +88,7 @@ static int mtd_write(struct mtd_info *mtd,uint64_t off,size_t len,size_t *actual
 {
 	int i,region=-1;
 	assert(mtd==&chip && len==SZ_128K && off+len<=SZ_256M);
-	write_count++;
+	write_count++;last_write_offset=off;
 	if(fail_write && write_count==fail_write){*actual=0;return -1;}
 	for(i=0;i<8;i++){
 		int idx=write_order[i];
@@ -139,7 +140,7 @@ static void no_write(void)
 static void complete(void)
 {
 	int i;u8 *expected;
-	assert(reset_count==1 && write_region_count==8 && bootloader_seen);
+	assert(reset_count==1 && write_region_count==8 && bootloader_seen && last_write_offset==0);
 	for(i=0;i<8;i++){
 		int idx=write_order[i];FILE *f=open_input(idx);assert(f);
 		assert(observed_regions[i]==write_order[i]);

@@ -11,9 +11,7 @@ typedef uint8_t u8;
 typedef uint32_t u32;
 typedef uintptr_t phys_addr_t;
 typedef size_t phys_size_t;
-#ifdef _WIN32
 typedef int64_t loff_t;
-#endif
 #define SZ_2K 0x800u
 #define SZ_128K 0x20000u
 #define SZ_256M 0x10000000u
