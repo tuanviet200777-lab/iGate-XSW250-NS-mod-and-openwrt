@@ -106,7 +106,7 @@ static int mtd_write(struct mtd_info *mtd,uint64_t off,size_t len,size_t *actual
 }
 static int mtd_erase(struct mtd_info *mtd,struct erase_info *e)
 {
-	assert(mtd==&chip && e->len==SZ_128K && e->addr+e->len<=SZ_256M);
+	assert(mtd==&chip && e->mtd==mtd && e->len==SZ_128K && e->addr+e->len<=SZ_256M);
 	erase_count++;
 	if(fail_erase && erase_count==fail_erase)return -1;
 	memset(nand_data+e->addr,0xff,e->len);return 0;

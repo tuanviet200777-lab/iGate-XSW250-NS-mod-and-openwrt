@@ -5,7 +5,7 @@
 #else
 #include <command.h>
 #include <cli.h>
-#include <cli_readline.h>
+#include <console.h>
 #include <dm/ofnode.h>
 #include <env.h>
 #include <event.h>
@@ -197,7 +197,7 @@ static int write_verified(struct mtd_info *mtd, unsigned int index)
 
 	printf("Restoring %s at 0x%x...\n", f->name, f->offset);
 	for (step = 0; step < f->size; step += SZ_128K) {
-		struct erase_info erase = { .len = SZ_128K };
+		struct erase_info erase = { .mtd = mtd, .len = SZ_128K };
 
 		/* Retain the current primary BL2 block until the final operation. */
 		pos = index == 0 ? f->size - SZ_128K - step : step;

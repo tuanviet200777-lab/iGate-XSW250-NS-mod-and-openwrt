@@ -10,6 +10,7 @@
 #include <dt-bindings/phy/phy.h>
 #include <linux/bitfield.h>
 #include <linux/delay.h>
+#include <linux/kernel.h>
 
 struct airoha_u2 {
 	void __iomem *base;

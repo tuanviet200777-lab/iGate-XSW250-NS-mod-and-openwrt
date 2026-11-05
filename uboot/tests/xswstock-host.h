@@ -31,7 +31,7 @@ typedef int64_t loff_t;
 #define mtd_is_bitflip(e) ((e)==-117)
 struct cmd_tbl {int unused;};
 struct mtd_info {struct mtd_info *parent; uint64_t size; u32 erasesize,writesize;bool nand;};
-struct erase_info {uint64_t addr,len;};
+struct erase_info {struct mtd_info *mtd;uint64_t addr,len;};
 static void *ubi_devices[1];
 static char console_buffer[64];
 static int hash_block(const char *,const void *,size_t,u8 *,int *);
