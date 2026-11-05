@@ -1,0 +1,173 @@
+{
+  "version": "2026.07",
+  "archive_url": "https://ftp.denx.de/pub/u-boot/u-boot-2026.07.tar.bz2",
+  "archive_sha256": "78e8bfc382fe388f9b55aa1daf8c563522a037779b5d4c349d1415e381f1243e",
+  "upstream_commit": "ece349ade2973e220f524ce59e59711cc919263f",
+  "openwrt_commit": "e695009c15c623f4f6a83376b505faaf7a4ae5b5",
+  "patches": [
+    {
+      "path": "100-bitops-import-BITS_PER_TYPE-macro-from-linux.patch",
+      "git_blob": "bd15f56b0c8930dfc6c79f7e3e858abbeb22ec53"
+    },
+    {
+      "path": "101-bitfield-Add-less-checking-__FIELD_-GET-PREP.patch",
+      "git_blob": "fd82dc81d83ecfe196a179a55f6ebc6cf43fbfd8"
+    },
+    {
+      "path": "102-bitfield-Add-non-constant-field_-prep-get-helpers.patch",
+      "git_blob": "ebbd409cbd6e3c1fe9a7a4d887e833d4ee5ac363"
+    },
+    {
+      "path": "103-pinctrl-add-more-pinconf-pinctrl-definitions.patch",
+      "git_blob": "1db13b5e8b60ac5b9d88cce7a7b9813ee4981c4b"
+    },
+    {
+      "path": "104-pinctrl-airoha-add-shared-pinctrl-code.patch",
+      "git_blob": "e5605784779168d52934ed89d9aec6b23069915a"
+    },
+    {
+      "path": "105-pinctrl-airoha-add-pin-controller-and-gpio-driver-fo.patch",
+      "git_blob": "afbcac5bba20417e650c4401e86d5947e529bc8b"
+    },
+    {
+      "path": "106-pinctrl-airoha-add-pin-controller-and-gpio-driver-fo.patch",
+      "git_blob": "aec28bd9ae63cd1f075b515041fa9b6c49c23b05"
+    },
+    {
+      "path": "107-pinctrl-airoha-add-pin-controller-and-gpio-driver-fo.patch",
+      "git_blob": "f128c6829785a73d6a5d6a09e726ef811176b93e"
+    },
+    {
+      "path": "108-configs-airoha-an7581-enable-pinctrl-gpio-support.patch",
+      "git_blob": "70d47810996c8f6e4cace7ba5507d096c3a79e0f"
+    },
+    {
+      "path": "109-configs-airoha-en7523-enable-pinctrl-gpio-support.patch",
+      "git_blob": "2b91fa101271b3f10623dd215cc51d407205ec4e"
+    },
+    {
+      "path": "110-arm-dts-en7523-add-pinctrl-gpio-support-drop-legacy-.patch",
+      "git_blob": "55bf01e08cf6e3df87d38c85435f37348854dead"
+    },
+    {
+      "path": "111-pinctrl-airoha-sync-with-upstream-linux-driver.patch",
+      "git_blob": "dad018206d5534c9b1d116e6b36924999ae0753a"
+    },
+    {
+      "path": "200-cmd-bootmenu-custom-title.patch",
+      "git_blob": "3a66aa298a2a0e2669854e65816358d5acf9e754"
+    },
+    {
+      "path": "201-cmd-env-readmem.patch",
+      "git_blob": "14a4ba112a7e6e23bd80aba4744eefc7e98d8e18"
+    },
+    {
+      "path": "300-airoha-add-support-for-Airoha-AN7583-SoC.patch",
+      "git_blob": "40d041b4b1778f799fcdef4f9dd8cc80bdb44708"
+    },
+    {
+      "path": "303-arm-airoha-introduce-AN7583-helpers-to-get-SCU-and-C.patch",
+      "git_blob": "865e27478ba71c9f47acb3801487e840254e08ac"
+    },
+    {
+      "path": "304-dt-bindings-clock-airoha-Document-support-for-AN7583.patch",
+      "git_blob": "272eae217a6b5f4f9ece91ab2a2b436125824b44"
+    },
+    {
+      "path": "305-clk-airoha-add-support-for-Airoha-AN7583-SoC-clock.patch",
+      "git_blob": "0a1e642bc13ecc41a21d90b7908d8eef9dd3e919"
+    },
+    {
+      "path": "306-reset-airoha-Add-support-for-Airoha-AN7583-reset.patch",
+      "git_blob": "0e4baf71c71e5ac0e177d9a349c261c558251311"
+    },
+    {
+      "path": "307-net-airoha-add-support-for-Airoha-AN7583.patch",
+      "git_blob": "9df883033ac7bfe97dd5eafbafc6a9beab99ab70"
+    },
+    {
+      "path": "308-airoha-add-Ethernet-node-in-AN7583-dtsi.patch",
+      "git_blob": "121c5b666f66e7c55a3b0ebafd703bd8e9da837a"
+    },
+    {
+      "path": "309-airoha-add-MMC-node-for-Airoha-AN7583.patch",
+      "git_blob": "f1d77467fd6fe9811b4e8b6d4d83aad09af23d7e"
+    },
+    {
+      "path": "400-add-nokia-valyrian.patch",
+      "git_blob": "5f3b9150f62e480616f4af289575d18930b0aea4"
+    },
+    {
+      "path": "401-add-nokia-xg-040g-md.patch",
+      "git_blob": "f07a345cceda5e8bb66734c30ab638c255965198"
+    },
+    {
+      "path": "402-add-nokia-xg-040g-mf.patch",
+      "git_blob": "9d76be6f5ae8a86fcf0f5da7dbbf758148149be2"
+    },
+    {
+      "path": "509-configs-an7583-add-mii-mdio-support.patch",
+      "git_blob": "4be2ff98cdfa4b059a460e1a4e6e1922271dc750"
+    },
+    {
+      "path": "510-arm-dts-an7583-add-mdio-child-node-to-switch-node.patch",
+      "git_blob": "9e81795dfd9aa7fabe601797f4e8e94023474bbb"
+    },
+    {
+      "path": "520-net-airoha-add-support-for-Airoha-AN7583-PCS-driver.patch",
+      "git_blob": "6d8bd0c6a3e44718d2dbb268835cfe9922ad97ba"
+    },
+    {
+      "path": "521-airoha-add-PCS-node-for-AN7583.patch",
+      "git_blob": "3f6e5055606c980f44aa6b027962e4a8930b0240"
+    },
+    {
+      "path": "522-configs-enable-PCS-for-Airoha-AN7583.patch",
+      "git_blob": "78097737598b9b3573668e22bdb96875c1525c8d"
+    },
+    {
+      "path": "530-net-Add-support-for-Airoha-AN7583-MDIO-Controller.patch",
+      "git_blob": "f149d21e16d88d1e46e54715f97e122d72182fc8"
+    },
+    {
+      "path": "531-an7583-fix-system-controller-mdio-nodes.patch",
+      "git_blob": "bbb5d7826da64076a26fb285164597c4ccb78026"
+    },
+    {
+      "path": "532-an7583-enable-MDIO_AIROHA-by-default.patch",
+      "git_blob": "140a39149511083eb8842f334cb9781deeb88160"
+    },
+    {
+      "path": "900-airoha-enable-UBI-support-and-define-default-partiti.patch",
+      "git_blob": "d0a534daadd9f0a3b5a367ab95aa19358776444c"
+    },
+    {
+      "path": "901-airoha-add-default-configuration.patch",
+      "git_blob": "2c134ade0da500d51a8451ebe9116fa547367a46"
+    },
+    {
+      "path": "902-configs-airoha-disable-ENV_IS_IN_MTD-to-avoid-panic.patch",
+      "git_blob": "d37b71bf415e9e479bc7e233a577d5bef1c6c3ce"
+    },
+    {
+      "path": "903-configs-airoha-enable-position-independent-code.patch",
+      "git_blob": "352dd49aba160dc70abccb9c674a954dc161e70d"
+    },
+    {
+      "path": "904-configs-airoha-add-missing-config-env-offset-redund.patch",
+      "git_blob": "f07e5eacdf117bbb648cba5bd6e67d3a7b1dfe35"
+    },
+    {
+      "path": "910-airoha-enable-OF_LIBFDT_OVERLAY-support-for-7581-7583.patch",
+      "git_blob": "17dee93f82e9218e28f07604c6b21a7060822ad3"
+    },
+    {
+      "path": "998-airoha-add-snfi-label.patch",
+      "git_blob": "200f93c10f126f21de327e14b9c9e5151ca231fe"
+    },
+    {
+      "path": "999-airoha-add-gemtek-w1700k.patch",
+      "git_blob": "4980f8105b04af3ac6ecab629aad1337c8451c50"
+    }
+  ]
+}

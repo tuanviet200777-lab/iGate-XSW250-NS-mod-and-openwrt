@@ -1,0 +1,51 @@
+name: XSW250NS U-Boot USB stock rollback candidate
+on:
+  push:
+    branches: [codex/xsw250ns-native-build]
+    paths: [uboot/**, .github/workflows/xsw250ns-uboot.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install cross compiler
+        run: sudo apt-get update && sudo apt-get install -y build-essential gcc-aarch64-linux-gnu bison flex libssl-dev libgnutls28-dev python3-dev python3-setuptools swig device-tree-compiler
+      - name: Prepare verified U-Boot and board overlay
+        run: python3 uboot/scripts/prepare-build.py "$RUNNER_TEMP/xsw250ns-uboot"
+      - name: Compile USB2 host and rollback command
+        working-directory: ${{ runner.temp }}/xsw250ns-uboot
+        shell: bash
+        run: |
+          set -o pipefail
+          make ARCH=arm CROSS_COMPILE=aarch64-linux-gnu- an7581_xsw250ns_usb_stock_defconfig
+          make -j4 ARCH=arm CROSS_COMPILE=aarch64-linux-gnu- 2>&1 | tee "$RUNNER_TEMP/xsw250ns-uboot-build.log"
+      - name: Preserve compiled candidate before checking
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: xsw250ns-uboot-compiled-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/xsw250ns-uboot/u-boot.bin
+            ${{ runner.temp }}/xsw250ns-uboot/u-boot.dtb
+            ${{ runner.temp }}/xsw250ns-uboot/u-boot
+            ${{ runner.temp }}/xsw250ns-uboot/.config
+            ${{ runner.temp }}/xsw250ns-uboot/xsw250ns-source-provenance.json
+      - name: Package FIP with the original BL31
+        shell: bash
+        run: |
+          curl --fail --location --retry 3 -o "$RUNNER_TEMP/original.fip" https://raw.githubusercontent.com/tuanviet200777-lab/iGate-XSW250-NS-mod-and-openwrt/3d79d29754313f8fdbfca281a90fd3900c2910d9/openwrt-airoha-an7581-vnpt_xsw250ns-ubi-bl31-uboot.fip
+          python3 uboot/scripts/pack-fip.py "$RUNNER_TEMP/original.fip" "$RUNNER_TEMP/xsw250ns-uboot/u-boot.bin" "$RUNNER_TEMP/release/openwrt-airoha-an7581-vnpt_xsw250ns-ubi-usb-stock-bl31-uboot.fip"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: xsw250ns-uboot-fip-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/release/*
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: xsw250ns-uboot-build-log-${{ github.sha }}
+          path: ${{ runner.temp }}/xsw250ns-uboot-build.log
