@@ -49,6 +49,8 @@ jobs:
         run: |
           curl --fail --location --retry 3 -o "$RUNNER_TEMP/original.fip" https://raw.githubusercontent.com/tuanviet200777-lab/iGate-XSW250-NS-mod-and-openwrt/3d79d29754313f8fdbfca281a90fd3900c2910d9/openwrt-airoha-an7581-vnpt_xsw250ns-ubi-bl31-uboot.fip
           python3 uboot/scripts/pack-fip.py "$RUNNER_TEMP/original.fip" "$RUNNER_TEMP/xsw250ns-uboot/u-boot.bin" "$RUNNER_TEMP/release/openwrt-airoha-an7581-vnpt_xsw250ns-ubi-usb-stock-bl31-uboot.fip"
+      - name: Verify ARM64, USB DTB, device fingerprints and retained BL31
+        run: python3 uboot/scripts/check-built.py "$RUNNER_TEMP" "$RUNNER_TEMP/original.fip" "$RUNNER_TEMP/release/artifact-checks.json"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: xsw250ns-uboot-fip-candidate-${{ github.sha }}
