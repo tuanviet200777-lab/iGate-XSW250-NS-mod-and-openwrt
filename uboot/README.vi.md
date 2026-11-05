@@ -1,5 +1,7 @@
 # U-Boot XSW250-NS: khôi phục firmware gốc từ USB
 
+Đã có FIP candidate build thành công, xem [kết quả và checksum](VALIDATION.vi.md).
+
 Mục menu mới: **Restore original firmware from USB (erases OpenWrt)**. Nhận USB bằng xHCI/PHY USB2 riêng cho AN7581; không bật SerDes USB3 hoặc đoán GPIO nguồn. Bản này cần thử RAM/UART trên máy thật trước khi dùng để ghi flash. Việc build và kiểm thử giả lập không xác nhận PHY USB hoặc boot NAND vật lý.
 
 ## Chuẩn bị USB

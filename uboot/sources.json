@@ -169,5 +169,17 @@
       "path": "999-airoha-add-gemtek-w1700k.patch",
       "git_blob": "4980f8105b04af3ac6ecab629aad1337c8451c50"
     }
-  ]
+  ],
+  "original_fip": {
+    "url": "https://raw.githubusercontent.com/tuanviet200777-lab/iGate-XSW250-NS-mod-and-openwrt/3d79d29754313f8fdbfca281a90fd3900c2910d9/openwrt-airoha-an7581-vnpt_xsw250ns-ubi-bl31-uboot.fip",
+    "sha256": "44d225b61b940e34a9a8490063688071e01f699af13cded8cc76fa19ed738779",
+    "role": "retain exact compressed BL31 and original complete board DT"
+  },
+  "usb2_phy_reference": {
+    "repository": "tuanviet200777-lab/immortalwrt",
+    "commit": "e695009c15c623f4f6a83376b505faaf7a4ae5b5",
+    "path": "target/linux/airoha/patches-6.18/220-07-phy-airoha-Add-support-for-Airoha-AN7581-USB-PHY.patch",
+    "scope": "USB2 init, calibration and host IDDIG only; no USB3/PCIe SerDes",
+    "git_blob": "1c535a0bd907eca9f56da0e443dbd33147a6f730"
+  }
 }

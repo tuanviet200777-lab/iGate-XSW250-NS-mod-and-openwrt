@@ -80,10 +80,30 @@ def main(folder,original,out):
     bl31='47d4086d4cfe98469b952950cbbd5a00';bl33='d6d0eea7fcead54b97829934f234b6e4'
     assert fip[:16]==old[:16] and a[bl31][0]==b[bl31][0] and a[bl31][2]==b[bl31][2]
     assert lzma.decompress(a[bl33][0])==binary and a[bl33][2]==b[bl33][2]
+    old_binary=lzma.decompress(b[bl33][0])
+    dtpos=old_binary.rfind(b'\xd0\x0d\xfe\xed');assert dtpos>=0
+    original_tree=parse_fdt(old_binary[dtpos:])
+    for path,props in original_tree.items():
+        assert path in tree and tree[path]==props,('Original board DT changed',path)
+    assert set(tree)-set(original_tree)=={'/usb@1fab0000','/usb@1fad0000','/phy@1fac0000','/phy@1fae0000'}
+    handles={int.from_bytes(v['phandle'],'big'):v for v in tree.values() if 'phandle' in v}
+    references=0
+    for props in tree.values():
+        for prop,cells in [('clocks','#clock-cells'),('phys','#phy-cells'),('resets','#reset-cells'),('gpios','#gpio-cells')]:
+            if prop not in props:continue
+            raw=props[prop];assert len(raw)%4==0
+            values=struct.unpack('>'+str(len(raw)//4)+'I',raw);pos=0
+            while pos<len(values):
+                handle=values[pos];assert handle in handles,(prop,handle)
+                provider=handles[handle];assert cells in provider,(prop,cells)
+                count=int.from_bytes(provider[cells],'big');pos+=1+count
+                assert pos<=len(values);references+=1
     assert a[bl31][1]+len(a[bl31][0])<=a[bl33][1]
     report={'fip':fips[0].name,'sha256':hashlib.sha256(fip).hexdigest(),'bytes':len(fip),
             'arm64_elf_entry':'0x81e00000','board':'vnpt,xsw250ns-ubi','ram_bytes':0x20000000,
             'usb_dtb':roots,'stock_file_metadata_verified_in_binary':12,
+            'original_board_dt_nodes_preserved_exactly':len(original_tree),
+            'only_four_usb_nodes_added':True,'numeric_clock_phy_reset_gpio_references_verified':references,
             'live_eeprom_hash_gate_present':True,'retained_bl31_compressed_sha256':hashlib.sha256(a[bl31][0]).hexdigest(),
             'new_bl33_matches_compiled_uboot_bin':True,
             'compiled_files':[{'name':p.name,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in files.values()],
