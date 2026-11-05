@@ -73,6 +73,8 @@ static int airoha_u2_on(struct phy *phy)
 {
 	struct airoha_u2 *p = dev_get_priv(phy->dev);
 
+	/* Fixed host connector: force IDDIG low, as in the Linux host mode. */
+	update(p, 0x36c, BIT(9) | BIT(1), BIT(9));
 	clrbits_le32(p->base + 0x318, BIT(23));
 	udelay(1000);
 	return 0;

@@ -9,7 +9,12 @@ root=Path(sys.argv[1]).resolve()
 assert not root.exists(),f'Refuse to replace existing build directory: {root}'
 root.parent.mkdir(parents=True,exist_ok=True)
 archive=root.parent/'u-boot-2026.07.tar.bz2'
-if not archive.exists():urllib.request.urlretrieve(spec['archive_url'],archive)
+if not archive.exists():
+    mirrors=['https://sources.cdn.openwrt.org/u-boot-2026.07.tar.bz2',spec['archive_url']]
+    for url in mirrors:
+        result=subprocess.run(['curl','-4','--fail','--location','--connect-timeout','15','--max-time','300','--retry','2','-o',str(archive),url])
+        if result.returncode==0:break
+    else:raise RuntimeError('No source mirror succeeded')
 assert hashlib.sha256(archive.read_bytes()).hexdigest()==spec['archive_sha256'],'U-Boot source checksum mismatch'
 with tarfile.open(archive) as tar:
     tar.extractall(root.parent,filter='data')

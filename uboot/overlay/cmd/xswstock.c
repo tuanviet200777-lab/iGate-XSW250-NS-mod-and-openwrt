@@ -26,7 +26,10 @@ struct stock_file {
 	u32 offset;
 	u8 digest[32];
 };
-#include "xswstock-layout.h"
+#ifndef XSWSTOCK_LAYOUT_HEADER
+#define XSWSTOCK_LAYOUT_HEADER "xswstock-layout.h"
+#endif
+#include XSWSTOCK_LAYOUT_HEADER
 
 static const u8 write_order[] = {4, 7, 8, 9, 10, 11, 1, 0};
 static phys_addr_t stage_base;
@@ -57,7 +60,7 @@ static void release_stage(void)
 static int validate_staged(void)
 {
 	static const u8 subfiles[] = {2, 3, 5, 6};
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(stock_files); i++)
 		if (digest_matches(file_data[i], stock_files[i].size,
@@ -85,7 +88,8 @@ static int stage_usb(void)
 	char device[16] = "", path[96], candidate[16];
 	loff_t size, actual;
 	phys_size_t total = SZ_128K, cursor = 0;
-	int dev, part, i;
+	int dev, part;
+	unsigned int i;
 
 	if (staged)
 		return validate_staged();
@@ -98,7 +102,7 @@ static int stage_usb(void)
 			snprintf(candidate, sizeof(candidate), "%d:%d", dev, part);
 			if (!fs_set_blk_dev("usb", candidate, FS_TYPE_FAT) &&
 			    !fs_size("/XSW250NS-STOCK/mtd0-bootloader.bin", &size) &&
-			    size == stock_files[0].size) {
+			    size == (loff_t)stock_files[0].size) {
 				strcpy(device, candidate);
 				break;
 			}
@@ -124,10 +128,10 @@ static int stage_usb(void)
 		file_data[i] = map_sysmem(stage_base + cursor, f->size);
 		snprintf(path, sizeof(path), "/XSW250NS-STOCK/%s", f->name);
 		if (fs_set_blk_dev("usb", device, FS_TYPE_FAT) ||
-		    fs_size(path, &size) || size != f->size ||
+		    fs_size(path, &size) || size != (loff_t)f->size ||
 		    fs_set_blk_dev("usb", device, FS_TYPE_FAT) ||
 		    fs_read(path, stage_base + cursor, 0, f->size, &actual) ||
-		    actual != f->size) {
+		    actual != (loff_t)f->size) {
 			printf("STOP: missing, wrong-size or unreadable %s\n", f->name);
 			release_stage();
 			return -1;
@@ -147,7 +151,8 @@ static int stage_usb(void)
 static int check_flash(struct mtd_info *mtd)
 {
 	size_t actual;
-	int ret, i;
+	int ret;
+	unsigned int i;
 
 	if (mtd->parent || mtd->size != SZ_256M ||
 	    mtd->erasesize != SZ_128K || mtd->writesize != SZ_2K ||
@@ -160,7 +165,7 @@ static int check_flash(struct mtd_info *mtd)
 		u32 off;
 
 		if ((f->offset | f->size) & (SZ_128K - 1) ||
-		    f->size > mtd->size - f->offset)
+		    f->offset > mtd->size || f->size > mtd->size - f->offset)
 			return -1;
 		for (off = f->offset; off < f->offset + f->size; off += SZ_128K) {
 			ret = mtd_block_isbad(mtd, off);
@@ -217,7 +222,8 @@ static int do_xswstock(struct cmd_tbl *cmdtp, int flag, int argc, char *const ar
 {
 	struct mtd_info *mtd;
 	bool restore;
-	int i, ret = CMD_RET_FAILURE;
+	unsigned int i;
+	int ret = CMD_RET_FAILURE;
 
 	if (argc != 2 || (strcmp(argv[1], "check") && strcmp(argv[1], "restore") &&
 			  strcmp(argv[1], "retry")))
