@@ -50,7 +50,7 @@ append('drivers/phy/Makefile','obj-$(CONFIG_PHY_AIROHA_USB2) += phy-airoha-usb2.
 append('drivers/phy/Kconfig','''config PHY_AIROHA_USB2
     bool "Airoha AN7581 USB2 PHY"
     depends on TARGET_AN7581
-    select GENERIC_PHY
+    select PHY
 ''')
 kconfig=root/'drivers/usb/host/Kconfig'
 text=kconfig.read_text()
