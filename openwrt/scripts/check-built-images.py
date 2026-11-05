@@ -12,7 +12,11 @@ for image in images+recoveries:fit.verify(image)
 data=images[0].read_bytes();nodes,_=fit.parse(data);node=nodes['/images/rootfs-1']
 offset=int.from_bytes(node['data-position'],'big');size=int.from_bytes(node['data-size'],'big')
 squash=out/'rootfs.squashfs';squash.write_bytes(data[offset:offset+size])
-root=out/'rootfs';subprocess.run(['unsquashfs','-d',str(root),str(squash)],check=True,stdout=subprocess.DEVNULL)
+root=out/'rootfs'
+# Inspect ordinary files and symlinks without trying to create /dev/console as
+# an unprivileged CI user. Device metadata remains in the unchanged SquashFS.
+subprocess.run(['unsquashfs','-no-xattrs','-d',str(root),str(squash),
+                'etc','usr','lib','sbin','www'],check=True,stdout=subprocess.DEVNULL)
 assert (root/'etc/xsw250ns-build-id').read_text().strip()=='xsw250ns-20261104-r5-usb-nas'
 assert (root/'etc/fw_env.config').is_symlink()
 assert str((root/'etc/fw_env.config').readlink())=='/tmp/xsw250ns-fw_env.config'

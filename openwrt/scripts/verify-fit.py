@@ -25,31 +25,74 @@ def parse(blob):
 
 def text(value):return value.rstrip(b'\0').decode()
 def number(value):return int.from_bytes(value,'big')
-def has_recovery_cpio(raw):
-    # This build explicitly selects uncompressed embedded initramfs.
-    candidate=raw.find(b'070701')
-    while candidate>=0:
-        pos=candidate;names=set();owners={}
+def _scan_newc(raw):
+    start = raw.find(b'070701')
+    while start >= 0:
+        pos = start; entries = {}; complete = False
         try:
-            while raw[pos:pos+6] in (b'070701',b'070702'):
-                fields=[int(raw[pos+6+i*8:pos+14+i*8],16) for i in range(13)]
-                filesize,namesize=fields[6],fields[11]
-                assert 0<namesize<=4096 and filesize<=len(raw)
-                start=pos+110;end=start+namesize
-                assert raw[end-1]==0
-                name=raw[start:end-1].decode().lstrip('./')
-                if name=='TRAILER!!!':break
-                names.add(name);owners[name]=(fields[2],fields[3],fields[1])
-                data=candidate+((end-candidate+3)&~3)
-                assert data+filesize<=len(raw)
-                pos=candidate+((data+filesize-candidate+3)&~3)
-            if {'init','bin/busybox'}<=names:
-                assert owners['init'][:2]==(0,0) and owners['bin/busybox'][:2]==(0,0),'initramfs ownership is not root'
-                assert owners['bin/busybox'][2]&0o111,'busybox is not executable'
-                return len(names)
-        except (AssertionError,ValueError,UnicodeDecodeError,IndexError):pass
-        candidate=raw.find(b'070701',candidate+1)
-    return 0
+            while raw[pos:pos+6] in (b'070701', b'070702'):
+                fields = [int(raw[pos+6+i*8:pos+14+i*8], 16) for i in range(13)]
+                length, namesize = fields[6], fields[11]
+                assert 0 < namesize <= 4096
+                end = pos + 110 + namesize
+                assert raw[end-1] == 0
+                name = raw[pos+110:end-1].decode().removeprefix('./').lstrip('/')
+                if name == 'TRAILER!!!':
+                    complete = True
+                    break
+                data = start + ((end-start+3) & ~3)
+                assert data+length <= len(raw)
+                entries[name] = {'data': raw[data:data+length], 'mode': fields[1],
+                                 'uid': fields[2], 'gid': fields[3]}
+                pos = start + ((data+length-start+3) & ~3)
+        except (AssertionError, ValueError, UnicodeDecodeError, IndexError):
+            complete = False
+        if complete and {'init', 'bin/busybox'} <= entries.keys():
+            for name in ['init', 'bin/busybox']:
+                assert (entries[name]['uid'], entries[name]['gid']) == (0, 0), 'initramfs ownership is not root'
+            assert entries['bin/busybox']['mode'] & 0o111, 'busybox is not executable'
+            return entries
+        start = raw.find(b'070701', start+1)
+    return {}
+
+def recovery_entries(raw):
+    entries = _scan_newc(raw)
+    if entries:
+        return entries
+    # Gzip-compress the embedded initramfs to keep the ARM64 Image below the
+    # board's NPU reservation. Ignore unrelated gzip-looking bytes in code.
+    start = raw.find(b'\x1f\x8b\x08')
+    while start >= 0:
+        try:
+            decoder = zlib.decompressobj(16 + zlib.MAX_WBITS)
+            archive = decoder.decompress(raw[start:], 256 * 1024 * 1024)
+            if decoder.eof:
+                entries = _scan_newc(archive)
+                if entries:
+                    return entries
+        except zlib.error:
+            pass
+        start = raw.find(b'\x1f\x8b\x08', start+1)
+    return {}
+
+def has_recovery_cpio(raw):
+    return len(recovery_entries(raw))
+
+def verify_kernel_memory(load, size, dtb):
+    assert size > 0, 'ARM64 image_size is missing'
+    end = load + size
+    ram = [struct.unpack('>QQ', props['reg']) for name, props in dtb.items()
+           if props.get('device_type') == b'memory\0' and len(props.get('reg', b'')) == 16]
+    assert any(base <= load and end <= base+length for base, length in ram), 'kernel does not fit usable RAM'
+    for name, props in dtb.items():
+        if not name.startswith('/reserved-memory/') or 'reg' not in props or props.get('status') == b'disabled\0':
+            continue
+        assert len(props['reg']) % 16 == 0
+        for offset in range(0, len(props['reg']), 16):
+            base, length = struct.unpack_from('>QQ', props['reg'], offset)
+            assert not (load < base+length and base < end), (
+                'kernel overlaps reserved RAM', name, hex(load), hex(end))
+    return {'load': hex(load), 'end': hex(end), 'image_size': size}
 
 def verify(path):
     blob=path.read_bytes();nodes,total=parse(blob)
@@ -82,6 +125,8 @@ def verify(path):
     assert raw[0x38:0x3c]==b'ARMd','not an ARM64 Linux Image'
     dtb=parse(payloads['flat_dt'][1])[0]
     assert dtb['/']['compatible'].split(b'\0')[0]==b'vnpt,xsw250ns-ubi'
+    memory = verify_kernel_memory(number(kernel['load']), struct.unpack_from('<Q', raw, 16)[0], dtb)
+    print(path.name+': kernel RAM placement verified '+str(memory))
     if 'sysupgrade' in path.name:
         assert payloads['filesystem'][1][:4]==b'hsqs','missing SquashFS payload'
         assert len(blob)<0xdda0000

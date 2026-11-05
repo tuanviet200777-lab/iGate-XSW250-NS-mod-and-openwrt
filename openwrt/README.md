@@ -50,6 +50,7 @@ Choose concurrency for available RAM. Stop on a failed step; use `make -j1 V=s` 
 python3 openwrt/tests/test_reader.py
 python3 openwrt/tests/test_rom_checker.py
 python3 openwrt/tests/test_fit_import.py
+python3 openwrt/tests/test_recovery_layout.py
 python3 openwrt/scripts/verify-fit.py /path/to/recovery.itb /path/to/sysupgrade.itb
 ```
 

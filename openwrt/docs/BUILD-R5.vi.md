@@ -10,6 +10,7 @@ Nguồn r5: nhánh `codex/xsw250ns-native-build` của repo `tuanviet200777-lab/
 - Ghim đủ năm feeds bằng `config/feeds.pinned.conf`, rồi áp `patches/openvpn-2.7.8.patch` vào feed packages.
 - Script prepare cũng áp patch Samba vào feed packages và patch menu Startup vào feed LuCI. Ba tệp này thuộc gói Samba/LuCI; đưa chúng vào board `base-files` gây lỗi APK `trying to overwrite` ở bước ghép rootfs.
 - Dùng `config/xsw250ns.full.config`, chạy `make defconfig` và kiểm tra cấu hình đã resolve.
+- Recovery dùng initramfs nhúng nén gzip. Rootfs có Samba ở lượt build trước có kích thước chưa nén khoảng 64,3 MiB, lớn hơn cả khoảng RAM 62 MiB từ địa chỉ kernel `0x80200000` đến vùng NPU `0x84000000`. Verifier kiểm tra `image_size` ARM64 và các vùng reserved-memory của DTB trước khi chấp nhận image.
 
 ## Vì sao cần build cả kernel
 
@@ -65,3 +66,5 @@ Sau boot recovery trên máy thật, kiểm tra `dmesg`, `lsusb -t`, `block info
 - [Binding xHCI MediaTek trong Linux](https://github.com/torvalds/linux/blob/master/Documentation/devicetree/bindings/usb/mediatek%2Cmtk-xhci.yaml).
 
 Các trang wiki bị Anubis chặn truy cập trực tiếp trong phiên 04/11/2026; nội dung hướng dẫn được đối chiếu qua bản lập chỉ mục trên openwrt.org. Makefile và patch của nền đã đọc trực tiếp qua GitHub.
+
+Workflow giữ candidate ITB trước bước kiểm tra, và lưu riêng log xác minh kể cả khi kiểm tra thất bại. Candidate chưa được coi là gói đã kiểm chứng chỉ vì tải được artifact. Bước trích xuất bằng tài khoản thường chỉ lấy các cây tệp cần kiểm tra, không cố tạo device node `/dev/console` trên host. Giới hạn nạp kernel dựa trên [quy tắc boot ARM64 của Linux](https://docs.kernel.org/arch/arm64/booting.html).
