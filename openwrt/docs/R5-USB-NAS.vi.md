@@ -1,6 +1,6 @@
-# XSW250NS r5 USB 2.0 / NAS — đang kiểm thử
+# XSW250NS r5 USB 2.0 / NAS
 
-Build ID: `xsw250ns-20261104-r5-usb-nas`. Đây là cấu hình build native mới, chưa phải xác nhận đã nhận USB trên router thật.
+Build ID: `xsw250ns-20261104-r5-usb-nas`. Đã có recovery/sysupgrade build native và kiểm thử NAS bằng rootfs thật trong QEMU. Xem [kết quả và checksum](R5-VALIDATION.vi.md). USB trên router thật chưa được xác nhận.
 
 Đã đọc ảnh và ghi chú tại `mod/usb` trên nhánh main của repo. Sơ đồ chỉ có D+/D− và VBUS 5 V; không có đường SuperSpeed. Source bật hai USB2 root ở chế độ high-speed, chỉ khai báo PHY USB2 và tắt cổng USB3 của xHCI. Ảnh chưa xác định USB0 hay USB1 nên cần UART thực tế để xác nhận root nối ra giắc. Không đoán GPIO nguồn; nguồn 5 V do mạch mod ngoài cấp.
 
@@ -11,8 +11,8 @@ NAS dùng Samba4 userspace và LuCI. Mặc định chỉ bind LAN, SMB2.1 đến
 Sau khi kiểm tra USB nhận đúng, cấu hình NAS theo thứ tự:
 
 1. Vào System → Mount Points, chọn partition theo UUID và đặt điểm gắn `/mnt/...`; không tự định dạng ổ. Xác nhận ổ đã mount trước khi tạo thư mục để tránh ghi nhầm vào NAND.
-2. Tạo tài khoản riêng qua SSH: `groupadd nas`, rồi `useradd -M -g nas -s /bin/false nas`. Cấp quyền thư mục trên ổ cho tài khoản đó. Với ext4 có thể dùng quyền Unix; filesystem dùng cùng Windows cần tùy chọn quyền mount phù hợp.
-3. Vào Services → Network Shares, tạo share đúng điểm gắn, đặt người dùng hợp lệ là `nas`, tắt guest và force-root. Chọn chỉ đọc hoặc đọc/ghi theo nhu cầu.
+2. Tạo tài khoản riêng qua SSH bằng helper có sẵn của OpenWrt: `. /lib/functions.sh; nas_gid="$(group_add_next nas)"; user_exists nas || user_add nas "" "$nas_gid" "NAS" /var/empty /bin/false`. Tài khoản có shell `/bin/false`, không có mật khẩu đăng nhập hệ thống. Hai lệnh `groupadd`/`useradd` không có trong image này; mật khẩu Samba được tạo riêng ở bước 4. Cấp quyền thư mục trên ổ cho tài khoản đó. Với ext4 có thể dùng quyền Unix; filesystem dùng cùng Windows cần tùy chọn quyền mount phù hợp.
+3. Vào NAS → Network Shares, tạo share đúng điểm gắn, đặt người dùng hợp lệ là `nas`, tắt guest và force-root. Chọn chỉ đọc hoặc đọc/ghi theo nhu cầu.
 4. Chạy `/etc/init.d/samba4 start` để sinh `/etc/samba/smb.conf`, sau đó mới chạy `smbpasswd -a nas` và nhập mật khẩu riêng. Template dùng backend `smbpasswd`; tạo mật khẩu khi chưa có cấu hình có thể dùng backend mặc định khác. Không đưa mật khẩu trực tiếp vào dòng lệnh.
 5. Chạy `/etc/init.d/samba4 restart`, kiểm tra truy cập từ máy trong LAN. Khi đã hoạt động, bật tự khởi động Samba trong System → Startup. Thử đọc/ghi và so checksum trước khi đưa dữ liệu chính vào.
 

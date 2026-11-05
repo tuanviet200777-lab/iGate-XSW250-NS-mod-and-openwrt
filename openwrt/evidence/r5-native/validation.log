@@ -1,0 +1,20 @@
+immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb /images/kernel-1 5862847 bytes: 2 hashes verified
+immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb /images/fdt-1 27701 bytes: 2 hashes verified
+immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb /images/rootfs-1 18714624 bytes: 2 hashes verified
+immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb: kernel RAM placement verified {'load': '0x80200000', 'end': '0x80f70000', 'image_size': 14090240}
+immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb: FIT config, board DTB, ARM64 kernel and payload integrity verified; SHA256 0342ae8dee7114de5683ae7e2237b7c0cc85133e23ea531fc8c3cb16dad31283
+immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-initramfs-recovery.itb /images/kernel-1 28488685 bytes: 2 hashes verified
+immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-initramfs-recovery.itb /images/fdt-1 27701 bytes: 2 hashes verified
+immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-initramfs-recovery.itb: kernel RAM placement verified {'load': '0x80200000', 'end': '0x82680000', 'image_size': 38273024}
+immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-initramfs-recovery.itb: embedded recovery CPIO verified, 2109 entries
+immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-initramfs-recovery.itb: FIT config, board DTB, ARM64 kernel and payload integrity verified; SHA256 f79c1068096358572818e653ba7b9e2b6532a2332dc22c248612ff19930819a1
+{
+  "build": "xsw250ns-20261104-r5-usb-nas",
+  "image": "immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb",
+  "sha256": "0342ae8dee7114de5683ae7e2237b7c0cc85133e23ea531fc8c3cb16dad31283",
+  "native_build": true,
+  "fit_verified": true,
+  "lower_nand_hook_verified": true,
+  "usb_nas_contents_verified": true,
+  "physical_boot_or_usb_tested": false
+}

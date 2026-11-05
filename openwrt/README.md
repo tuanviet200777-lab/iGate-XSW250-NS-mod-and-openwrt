@@ -1,3 +1,5 @@
+Đã có bản native r5 và bằng chứng kiểm tra: [R5-VALIDATION.vi.md](docs/R5-VALIDATION.vi.md). Phân biệt build native, thử userland QEMU và USB vật lý.
+
 # XSW250-NS r5: USB2/NAS and security fixes (native build candidate)
 
 The current native profile is `xsw250ns-20261104-r5-usb-nas`; use `patches/xsw250ns-support-r5-usb-nas.patch` and the accompanying OpenVPN feed update. See [USB/NAS scope and validation limits](docs/R5-USB-NAS.vi.md). The r4 evidence below remains historical: it does not certify the new USB/NAS build. GitHub Actions compiles the kernel, matching USB modules and userland, then checks the contents of the actual image. A successful build is still not a physical USB test.
