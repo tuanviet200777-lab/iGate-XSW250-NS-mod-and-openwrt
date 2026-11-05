@@ -197,9 +197,11 @@ static int write_verified(struct mtd_info *mtd, unsigned int index)
 
 	printf("Restoring %s at 0x%x...\n", f->name, f->offset);
 	for (step = 0; step < f->size; step += SZ_128K) {
+		struct erase_info erase = { .len = SZ_128K };
+
 		/* Retain the current primary BL2 block until the final operation. */
 		pos = index == 0 ? f->size - SZ_128K - step : step;
-		struct erase_info erase = { .addr = f->offset + pos, .len = SZ_128K };
+		erase.addr = f->offset + pos;
 
 		if (mtd_block_isbad(mtd, erase.addr))
 			return -1;
@@ -290,10 +292,24 @@ out_stage:
 
 static int xswstock_menu_init(void)
 {
+	char variable[24];
+	unsigned int i;
+
 	if (!ofnode_device_is_compatible(ofnode_root(), "vnpt,xsw250ns-ubi"))
 		return 0;
-	/* Refresh persisted environments without saveenv or NAND writes. */
-	env_set("bootmenu_9", "Restore original firmware from USB (erases OpenWrt)=xswstock restore");
+
+	/* Append to old saved menus too: bootmenu stops at its first missing key. */
+	for (i = 0; i < 100; i++) {
+		const char *value;
+
+		snprintf(variable, sizeof(variable), "bootmenu_%u", i);
+		value = env_get(variable);
+		if (!value || strstr(value, "xswstock restore")) {
+			env_set(variable, "Restore original firmware from USB (erases OpenWrt)=xswstock restore");
+			break;
+		}
+	}
+	/* Runtime-only menu update, never saveenv. */
 	run_command("usb start", 0);
 	return 0;
 }

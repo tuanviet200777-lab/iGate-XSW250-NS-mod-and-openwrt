@@ -52,5 +52,6 @@ static int mtd_erase(struct mtd_info *,struct erase_info *);
 static int ctrlc(void);
 static int cli_readline(const char *);
 static int env_set(const char *,const char *);
+static const char *env_get(const char *);
 static int ofnode_root(void);
 static int ofnode_device_is_compatible(int,const char *);

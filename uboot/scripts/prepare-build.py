@@ -52,6 +52,11 @@ append('drivers/phy/Kconfig','''config PHY_AIROHA_USB2
     depends on TARGET_AN7581
     select GENERIC_PHY
 ''')
+kconfig=root/'drivers/usb/host/Kconfig'
+text=kconfig.read_text()
+old='config USB_XHCI_MTK\n\tbool \"Support for MediaTek on-chip xHCI USB controller\"\n\tdepends on ARCH_MEDIATEK || SOC_MT7621'
+assert old in text
+kconfig.write_text(text.replace(old,old+' || TARGET_AN7581'))
 file=root/'drivers/usb/host/xhci-mtk.c'
 content=file.read_text()
 old='ret = clk_get_bulk(dev, &mtk->clks);\n\tif (ret) {'

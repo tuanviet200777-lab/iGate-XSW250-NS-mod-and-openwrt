@@ -11,6 +11,8 @@ static int cancel,usb_unavailable,detach_failure,erase_count,write_count,reset_c
 static int bootloader_seen,write_region_count,previous_region=-1;
 static unsigned int observed_regions[8];
 static uint64_t last_write_offset;
+static int existing_menu_count;
+static char added_menu_key[32];
 static int total_tests;
 static const char *current_name;
 
@@ -112,7 +114,17 @@ static int mtd_erase(struct mtd_info *mtd,struct erase_info *e)
 static int ctrlc(void){return 0;}
 static int cli_readline(const char *prompt)
 {(void)prompt;strcpy(console_buffer,cancel?"cancel":"RESTORE-STOCK");return strlen(console_buffer);}
-static int env_set(const char *name,const char *value){(void)name;(void)value;return 0;}
+static int env_set(const char *name,const char *value)
+{
+    if(strstr(value,"xswstock restore"))snprintf(added_menu_key,sizeof(added_menu_key),"%s",name);
+    return 0;
+}
+static const char *env_get(const char *name)
+{
+    unsigned int i;
+    if(sscanf(name,"bootmenu_%u",&i)==1 && i<(unsigned)existing_menu_count)return "existing menu";
+    return NULL;
+}
 static int ofnode_root(void){return 0;}
 static int ofnode_device_is_compatible(int node,const char *compat)
 {(void)node;assert(!strcmp(compat,"vnpt,xsw250ns-ubi"));return !wrong_board;}
@@ -156,6 +168,8 @@ int main(int argc,char **argv)
 	FILE *report;
 	assert(argc==3);snprintf(fixture,sizeof(fixture),"%s",argv[1]);
 	nand_data=malloc(SZ_256M);assert(nand_data);
+	setup("menu appears after older persisted eight-entry menu without writes");existing_menu_count=8;added_menu_key[0]=0;assert(xswstock_menu_init()==0);assert(!strcmp(added_menu_key,"bootmenu_8")&&usb_starts==1&&!erase_count&&!write_count);pass();
+	setup("menu appears after current nine-entry menu without writes");existing_menu_count=9;added_menu_key[0]=0;assert(xswstock_menu_init()==0);assert(!strcmp(added_menu_key,"bootmenu_9")&&usb_starts==1&&!erase_count&&!write_count);pass();
 	setup("check validates actual files without NAND writes");assert(call("check")==0);assert(!erase_count&&!write_count&&!reset_count&&!stage_size);pass();
 	setup("USB start failure performs no writes");usb_unavailable=1;no_write();
 	setup("wrong board rejected");wrong_board=1;no_write();
