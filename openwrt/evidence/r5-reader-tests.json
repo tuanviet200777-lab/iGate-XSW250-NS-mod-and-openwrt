@@ -1,0 +1,50 @@
+[
+  {
+    "case": "old-readonly-regression",
+    "passed": true,
+    "exit_code": 1,
+    "stderr": "touch: /etc/config/ubootenv: Read-only file system\nuci: Entry not found\nuci: Entry not found\nuci: Entry not found\n"
+  },
+  {
+    "case": "pre-overlay-readonly",
+    "passed": true,
+    "exit_code": 0,
+    "stderr": ""
+  },
+  {
+    "case": "discovered-not-hardcoded-ids",
+    "passed": true,
+    "exit_code": 0,
+    "stderr": ""
+  },
+  {
+    "case": "missing-second-volume",
+    "passed": true,
+    "exit_code": 1,
+    "stderr": ""
+  },
+  {
+    "case": "same-volume-rejected",
+    "passed": true,
+    "exit_code": 1,
+    "stderr": ""
+  },
+  {
+    "case": "wrong-leb-size-rejected",
+    "passed": true,
+    "exit_code": 1,
+    "stderr": ""
+  },
+  {
+    "case": "malformed-id-rejected",
+    "passed": true,
+    "exit_code": 1,
+    "stderr": ""
+  },
+  {
+    "case": "different-board-untouched",
+    "passed": true,
+    "exit_code": 0,
+    "stderr": ""
+  }
+]

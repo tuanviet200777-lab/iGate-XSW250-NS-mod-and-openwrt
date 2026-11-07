@@ -1,0 +1,165 @@
+[
+  {
+    "name": "unauthenticated file.read denied",
+    "passed": true,
+    "details": null
+  },
+  {
+    "name": "unauthenticated file.read denied",
+    "passed": true,
+    "details": null
+  },
+  {
+    "name": "unauthenticated file.write denied",
+    "passed": true,
+    "details": null
+  },
+  {
+    "name": "unauthenticated file.exec denied",
+    "passed": true,
+    "details": null
+  },
+  {
+    "name": "unauthenticated uci.get denied",
+    "passed": true,
+    "details": null
+  },
+  {
+    "name": "unauthenticated uci.set denied",
+    "passed": true,
+    "details": null
+  },
+  {
+    "name": "unauthenticated system.reboot denied",
+    "passed": true,
+    "details": null
+  },
+  {
+    "name": "unauthenticated rc.init denied",
+    "passed": true,
+    "details": null
+  },
+  {
+    "name": "unauthenticated luci.xsw250ns-port.status denied",
+    "passed": true,
+    "details": null
+  },
+  {
+    "name": "unauthenticated luci.xsw250ns-status.status denied",
+    "passed": true,
+    "details": null
+  },
+  {
+    "name": "HTTP file traversal/auth bypass blocked: /etc/shadow",
+    "passed": true,
+    "details": "HTTP/1.1 404 Not Found\r\nConnecti"
+  },
+  {
+    "name": "HTTP file traversal/auth bypass blocked: /etc/config/network",
+    "passed": true,
+    "details": "HTTP/1.1 404 Not Found\r\nConnecti"
+  },
+  {
+    "name": "HTTP file traversal/auth bypass blocked: /../etc/shadow",
+    "passed": true,
+    "details": "HTTP/1.1 404 Not Found\r\nConnecti"
+  },
+  {
+    "name": "HTTP file traversal/auth bypass blocked: /%2e%2e/etc/shadow",
+    "passed": true,
+    "details": "HTTP/1.1 404 Not Found\r\nConnecti"
+  },
+  {
+    "name": "HTTP file traversal/auth bypass blocked: /cgi-bin/luci/../../etc/shadow",
+    "passed": true,
+    "details": "HTTP/1.1 404 Not Found\r\nConnecti"
+  },
+  {
+    "name": "HTTP file traversal/auth bypass blocked: /luci-static/../../etc/shadow",
+    "passed": true,
+    "details": "HTTP/1.1 404 Not Found\r\nConnecti"
+  },
+  {
+    "name": "HTTP file traversal/auth bypass blocked: /cgi-bin/luci/admin/system/flash",
+    "passed": true,
+    "details": "HTTP/1.1 403 Forbidden\r\nConnecti"
+  },
+  {
+    "name": "malformed RPC input bounded and server survives #0",
+    "passed": true,
+    "details": "HTTP/1.1 200 OK\r\nConnection: clo"
+  },
+  {
+    "name": "malformed RPC input bounded and server survives #1",
+    "passed": true,
+    "details": "HTTP/1.1 200 OK\r\nConnection: clo"
+  },
+  {
+    "name": "malformed RPC input bounded and server survives #2",
+    "passed": true,
+    "details": "HTTP/1.1 200 OK\r\nConnection: clo"
+  },
+  {
+    "name": "malformed RPC input bounded and server survives #3",
+    "passed": true,
+    "details": "HTTP/1.1 200 OK\r\nConnection: clo"
+  },
+  {
+    "name": "malformed RPC input bounded and server survives #4",
+    "passed": true,
+    "details": "HTTP/1.1 200 OK\r\nConnection: clo"
+  },
+  {
+    "name": "malformed RPC input bounded and server survives #5",
+    "passed": true,
+    "details": "HTTP/1.1 200 OK\r\nConnection: clo"
+  },
+  {
+    "name": "malformed RPC input bounded and server survives #6",
+    "passed": true,
+    "details": "HTTP/1.1 200 OK\r\nConnection: clo"
+  },
+  {
+    "name": "malformed RPC input bounded and server survives #7",
+    "passed": true,
+    "details": "HTTP/1.1 200 OK\r\nConnection: clo"
+  },
+  {
+    "name": "malformed RPC input bounded and server survives #8",
+    "passed": true,
+    "details": "HTTP/1.1 200 OK\r\nConnection: clo"
+  },
+  {
+    "name": "conflicting Content-Length does not crash HTTP server",
+    "passed": true,
+    "details": "HTTP/1.1 400 Bad Request\r\nConnec"
+  },
+  {
+    "name": "CL plus chunked does not crash HTTP server",
+    "passed": true,
+    "details": "HTTP/1.1 400 Bad Request\r\nConnec"
+  },
+  {
+    "name": "mixed-case chunked does not crash HTTP server",
+    "passed": true,
+    "details": "HTTP/1.1 200 OK\r\nConnection: clo"
+  },
+  {
+    "name": "oversized header does not crash HTTP server",
+    "passed": true,
+    "details": "HTTP/1.1 413 Request Entity Too "
+  },
+  {
+    "name": "100 denied requests at concurrency 4 remain responsive",
+    "passed": true,
+    "details": {
+      "denied": 100,
+      "seconds": 2.69
+    }
+  },
+  {
+    "name": "administrator authentication still works after malformed traffic",
+    "passed": true,
+    "details": null
+  }
+]

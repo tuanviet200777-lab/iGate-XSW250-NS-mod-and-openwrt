@@ -1,0 +1,9 @@
+{
+  "tests": 19,
+  "passed": 19,
+  "actual_production_command_compiled": true,
+  "physical_flash_performed": false,
+  "scope": "host API fault injection, in-memory NAND; USB/PHY not emulated",
+  "fixture": "actual private nandback2.zip data; no device access",
+  "backup_archive_sha256": "118187a7e62366622bc3d1faa3f8e593feef892921b280a760e5342847336269"
+}

@@ -1,0 +1,12 @@
+{
+  "luci-xsw250ns-port": {
+    "description": "Read XSW250NS port state; changes require standard network/firewall administration rights",
+    "read": {
+      "ubus": {
+        "system": ["board"],
+        "session": ["access"],
+        "luci.xsw250ns-port": ["status"]
+      }
+    }
+  }
+}

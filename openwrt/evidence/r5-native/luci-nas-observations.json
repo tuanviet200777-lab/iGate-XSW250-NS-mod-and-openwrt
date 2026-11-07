@@ -1,0 +1,18 @@
+{
+  "scope": "read-only browser inspection of native r5 userland on QEMU virt",
+  "rootfs_sha256": "e63477007e307d865d21d391821354c3cfeacdb7be35fbc6eefca28da156ea1c",
+  "pages": [
+    {
+      "route": "/admin/nas/samba4",
+      "loaded": true,
+      "observed": "Samba 4.24.5, LAN interface, legacy protocols unchecked, qa and qa_ro fixture shares"
+    },
+    {
+      "route": "/admin/system/mounts",
+      "loaded": true,
+      "observed": "mount settings, mounted filesystems, mount-point and swap tables"
+    }
+  ],
+  "ui_settings_modified": false,
+  "physical_usb_or_router_tested": false
+}

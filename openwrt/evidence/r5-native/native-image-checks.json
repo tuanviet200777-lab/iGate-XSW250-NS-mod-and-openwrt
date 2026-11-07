@@ -1,0 +1,127 @@
+{
+  "source_commit": "b2cb17d69347e95c57b28da71bda498b2cd9fef0",
+  "build_run": 41963638759,
+  "images": [
+    {
+      "name": "immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb",
+      "bytes": 24613142,
+      "sha256": "0342ae8dee7114de5683ae7e2237b7c0cc85133e23ea531fc8c3cb16dad31283"
+    },
+    {
+      "name": "immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-initramfs-recovery.itb",
+      "bytes": 28573696,
+      "sha256": "f79c1068096358572818e653ba7b9e2b6532a2332dc22c248612ff19930819a1"
+    }
+  ],
+  "fwtool_metadata": {
+    "metadata_version": "1.1",
+    "compat_version": "1.0",
+    "supported_devices": [
+      "vnpt,xsw250ns-ubi"
+    ],
+    "version": {
+      "dist": "ImmortalWrt",
+      "version": "SNAPSHOT",
+      "revision": "r0+42542-e695009c15",
+      "target": "airoha/an7581",
+      "board": "vnpt_xsw250ns-ubi"
+    }
+  },
+  "fwtool_trailers": [
+    {
+      "kind": 1,
+      "size": 278,
+      "crc_verified": true
+    }
+  ],
+  "signature_authenticity_checked": false,
+  "usb_dtb_checks": [
+    {
+      "image": "immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb",
+      "usb_roots": [
+        {
+          "node": "/soc/usb@1fab0000",
+          "phy": "/soc/phy@1fac0000",
+          "usb2_only": true
+        },
+        {
+          "node": "/soc/usb@1fad0000",
+          "phy": "/soc/phy@1fae0000",
+          "usb2_only": true
+        }
+      ],
+      "both_wifi_pcie_roots_enabled": true,
+      "physical_usb_tested": false
+    },
+    {
+      "image": "immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-initramfs-recovery.itb",
+      "usb_roots": [
+        {
+          "node": "/soc/usb@1fab0000",
+          "phy": "/soc/phy@1fac0000",
+          "usb2_only": true
+        },
+        {
+          "node": "/soc/usb@1fad0000",
+          "phy": "/soc/phy@1fae0000",
+          "usb2_only": true
+        }
+      ],
+      "both_wifi_pcie_roots_enabled": true,
+      "physical_usb_tested": false
+    }
+  ],
+  "source_paths_verified_in_both_images": [
+    "etc/xsw250ns-build-id",
+    "etc/board.d/04_xsw250ns_ubootenv",
+    "usr/share/ucode/xsw250ns/diagnostics.uc",
+    "usr/share/ucode/xsw250ns/state.uc",
+    "usr/share/rpcd/ucode/luci.xsw250ns-port",
+    "usr/share/rpcd/ucode/luci.xsw250ns-status",
+    "usr/share/luci/menu.d/luci-mod-system.json",
+    "etc/config/samba4",
+    "etc/samba/smb.conf.template"
+  ],
+  "modules": [
+    {
+      "path": "lib/modules/6.18.55/xhci-hcd.ko",
+      "sha256": "6bce332a1dcaa72efe8672e2454598227e50b22952cd8c83641f83c3542d81f9",
+      "vermagic": "6.18.55 SMP mod_unload aarch64"
+    },
+    {
+      "path": "lib/modules/6.18.55/xhci-mtk-hcd.ko",
+      "sha256": "9f1bd017c54e13b49c5f8f8a63257b135b43881ee16dbb776f39026b49cceb61",
+      "vermagic": "6.18.55 SMP mod_unload aarch64"
+    },
+    {
+      "path": "lib/modules/6.18.55/usb-storage.ko",
+      "sha256": "a83029dacf69913e5d56a1afbea205b14480b75307d594529ecd3810fcb60196",
+      "vermagic": "6.18.55 SMP mod_unload aarch64"
+    },
+    {
+      "path": "lib/modules/6.18.55/uas.ko",
+      "sha256": "5a8a1e3048a7d66c0ab528ae08987523862d02e2cfc827f90d30ffe9b52a3097",
+      "vermagic": "6.18.55 SMP mod_unload aarch64"
+    },
+    {
+      "path": "lib/modules/6.18.55/exfat.ko",
+      "sha256": "12ba389bad48f03c8b7ab5b4af6dd522fbcfd186267ea1c17038b66251bc4247",
+      "vermagic": "6.18.55 SMP mod_unload aarch64"
+    },
+    {
+      "path": "lib/modules/6.18.55/ntfs3.ko",
+      "sha256": "5f859ce2d3770535d6510281510099bf8fe7e2f17a7b19c191ac8e6eb568924b",
+      "vermagic": "6.18.55 SMP mod_unload aarch64"
+    },
+    {
+      "path": "lib/modules/6.18.55/vfat.ko",
+      "sha256": "c090e6a1d71f29c650500d5ddbf065d6a18f1ee44e08aebed6138dc85603308e",
+      "vermagic": "6.18.55 SMP mod_unload aarch64"
+    }
+  ],
+  "sysupgrade_regular_files": 1586,
+  "recovery_entries": 2109,
+  "rootfs_sha256": "e63477007e307d865d21d391821354c3cfeacdb7be35fbc6eefca28da156ea1c",
+  "native_build": true,
+  "physical_boot_or_usb_tested": false
+}
