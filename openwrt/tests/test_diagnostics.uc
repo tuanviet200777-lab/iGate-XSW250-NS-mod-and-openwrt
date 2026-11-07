@@ -35,6 +35,12 @@ check('password line masked', index(redact('password=example-password', []), 'ex
 check('quoted password masked', index(redact('"password": "example-password"', []), 'example-password') < 0);
 check('token pattern masked', index(redact('github_' + 'pat_' + 'example123456789', []), 'example123456789') < 0);
 check('private key removed', index(redact('-----BEGIN ' + 'PRIVATE KEY-----\nEXAMPLEKEY\n-----END PRIVATE KEY-----', []), 'EXAMPLEKEY') < 0);
+check('short secret masked', redact('zz', ['zz']) == '[HIDDEN]');
+check('URL credentials masked', index(redact('https://alice:example-pass@host/path', []), 'example-pass') < 0);
+check('encoded URL credentials masked', index(redact('smb://alice:p%40ss@host/share', []), 'p%40ss') < 0);
+check('overlap masked', redact('abcdef abc', ['abc','abcdef']) == '[HIDDEN] [HIDDEN]');
+check('structural masking before short secret', index(redact('password=unknown-value', ['pass']), 'unknown-value') < 0);
+check('plain URL retained', redact('https://host/path', []) == 'https://host/path');
 check('diagnostic error text retained', index(redact('NVMEM read failed; UBIFS mounted', []), 'NVMEM read failed') >= 0);
 check('unicast MAC accepted', validMac('02:12:34:56:78:9a'));
 check('broadcast MAC rejected', !validMac('ff:ff:ff:ff:ff:ff'));

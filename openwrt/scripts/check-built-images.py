@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """Verify FIT, lower-root NAND fix, and the files actually shipped by native build."""
+
+if not __debug__:
+    raise RuntimeError("Refusing optimized Python: integrity checks required")
 import hashlib,importlib.util,json,pathlib,subprocess,sys
 folder=pathlib.Path(sys.argv[1]);out=pathlib.Path(sys.argv[2]);out.mkdir(parents=True,exist_ok=True)
 spec=importlib.util.spec_from_file_location('fit',pathlib.Path(__file__).with_name('verify-fit.py'))
@@ -17,7 +20,7 @@ root=out/'rootfs'
 # an unprivileged CI user. Device metadata remains in the unchanged SquashFS.
 subprocess.run(['unsquashfs','-no-xattrs','-d',str(root),str(squash),
                 'etc','usr','lib','sbin','www'],check=True,stdout=subprocess.DEVNULL)
-assert (root/'etc/xsw250ns-build-id').read_text().strip()=='xsw250ns-20261104-r5-usb-nas'
+assert (root/'etc/xsw250ns-build-id').read_text().strip()=='xsw250ns-20261107-r6-security-ports-candidate'
 assert (root/'etc/fw_env.config').is_symlink()
 assert str((root/'etc/fw_env.config').readlink())=='/tmp/xsw250ns-fw_env.config'
 assert hashlib.sha256((root/'etc/board.d/04_xsw250ns_ubootenv').read_bytes()).hexdigest()=='d5f7da4aa0809654cb491e04a1064ef181dde1dec54865008050fe2f380ef9c2'
@@ -32,8 +35,20 @@ assert 'uci' not in acl['luci-xsw250ns-port']['read']
 template=(root/'etc/samba/smb.conf.template').read_text()
 for setting in ['server min protocol = SMB2_10','map to guest = Never','null passwords = no','bind interfaces only = yes']:
     assert setting in template,setting
-for path in ['usr/libexec/xsw250ns-hotfix','www/luci-static/resources/view/system/xsw250ns-hotfix.js','www/luci-static/resources/view/status/include/99_xsw250ns_port.js']:
-    assert not (root/path).exists(),path
-result={'build':'xsw250ns-20261104-r5-usb-nas','image':images[0].name,'sha256':hashlib.sha256(data).hexdigest(),'native_build':True,'fit_verified':True,'lower_nand_hook_verified':True,'usb_nas_contents_verified':True,'physical_boot_or_usb_tested':False}
+for path in ['usr/libexec/xsw250ns-hotfix', 'etc/init.d/xsw250ns-hotfix',
+             'usr/share/luci/menu.d/luci-xsw250ns-hotfix.json',
+             'usr/share/rpcd/acl.d/luci-xsw250ns-hotfix.json',
+             'usr/share/rpcd/ucode/luci.xsw250ns-hotfix',
+             'usr/share/ucode/xsw250ns/hotfix.uc', 'usr/share/ucode/xsw250ns/policy.uc',
+             'etc/xsw250ns-hotfix', 'etc/xsw250ns-hotfix-install-backup',
+             'www/luci-static/resources/view/system/xsw250ns-hotfix.js',
+             'www/luci-static/resources/view/status/include/99_xsw250ns_port.js']:
+    assert not (root/path).exists() and not (root/path).is_symlink(),path
+for rel in ['usr/share/ucode/xsw250ns/diagnostics.uc',
+            'www/luci-static/resources/xsw250ns/portrole.js',
+            'www/luci-static/resources/view/status/include/98_xsw250ns_port_v2.js']:
+    expected=pathlib.Path(__file__).resolve().parents[1]/'files'/rel
+    assert (root/rel).read_bytes()==expected.read_bytes(), 'stale asset: '+rel
+result={'build':'xsw250ns-20261107-r6-security-ports-candidate','image':images[0].name,'sha256':hashlib.sha256(data).hexdigest(),'native_build':True,'fit_verified':True,'lower_nand_hook_verified':True,'usb_nas_contents_verified':True,'physical_boot_or_usb_tested':False}
 (out/'image-verification.json').write_text(json.dumps(result,indent=2)+'\n')
 print(json.dumps(result,indent=2))

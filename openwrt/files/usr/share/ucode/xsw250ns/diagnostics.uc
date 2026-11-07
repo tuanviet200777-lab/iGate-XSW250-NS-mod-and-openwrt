@@ -67,7 +67,7 @@ function hiddenValues() {
 				for (let key, val in s)
 					if (match(key, /(pass|secret|token|key|ssid|username|hostname|clientid)/i))
 						for (let v in type(val) == 'array' ? val : [val])
-							if (type(v) == 'string' && length(v) >= 4) push(hidden, v);
+							if (type(v) == 'string' && length(v) > 0) push(hidden, v);
 			});
 		} catch (e) { /* An absent optional package is not a collection failure. */ }
 	}
@@ -76,15 +76,24 @@ function hiddenValues() {
 
 export function redact(text, hidden) {
 	let out = '' + (text ?? '');
-	for (let secret in sort(hidden ?? [], (a, b) => length(b) - length(a)))
-		if (type(secret) == 'string' && length(secret) >= 4)
-			out = join('[HIDDEN]', split(out, secret));
 	// Never include a kernel command line: OEM bootargs can contain passwords.
 	out = join('\n', filter(split(out, '\n'), line => !match(line, /kernel command line:|bootargs=/i)));
 	out = replace(out, /(sk-|github_pat_|ghp_|AIza)[A-Za-z0-9_-]{8,}/g, '[TOKEN]');
 	const private_header = match(out, /-----BEGIN[^\n]*PRIVATE KEY-----/);
 	if (private_header) out = substr(out, 0, index(out, private_header[0])) + '[PRIVATE KEY REMOVED]';
 	out = replace(out, /((password|passwd|secret|token|psk|ssid|username|serial|authorization|bearer|api[_-]?key)["' \t]*[:= ]+)[^\r\n]*/gi, '$1[HIDDEN]');
+	out = replace(out, /([a-z][a-z0-9+.-]*:\/\/)[^[:space:]\/@]+@/gi, '$1[URL-CREDENTIALS]@');
+	const secrets = sort(filter(hidden ?? [], v => type(v) == 'string' && length(v) > 0),
+		(a, b) => length(b) - length(a));
+	let masked = '', pos = 0;
+	while (pos < length(out)) {
+		let found = null;
+		for (let secret in secrets)
+			if (substr(out, pos, length(secret)) == secret) { found = secret; break; }
+		if (found != null) { masked += '[HIDDEN]'; pos += length(found); }
+		else { masked += substr(out, pos, 1); pos++; }
+	}
+	out = masked;
 	return out;
 }
 

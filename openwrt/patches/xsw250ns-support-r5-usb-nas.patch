@@ -332,14 +332,13 @@ index 0000000000..e01c65d740
 +}
 diff --git a/target/linux/airoha/an7581/base-files/www/luci-static/resources/xsw250ns/portrole.js b/target/linux/airoha/an7581/base-files/www/luci-static/resources/xsw250ns/portrole.js
 new file mode 100644
-index 0000000000..4026d49f79
 --- /dev/null
 +++ b/target/linux/airoha/an7581/base-files/www/luci-static/resources/xsw250ns/portrole.js
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,118 @@
 +'use strict';
 +'require baseclass';
 +
-+const PORT = 'lan2p5';
++const PORTS = ['lan2p5', 'lan1', 'lan2', 'lan3', 'lan4'];
 +const STATE = 'xsw250ns_port2p5';
 +
 +function list(value) {
@@ -351,35 +350,38 @@ index 0000000000..4026d49f79
 +}
 +
 +function usesPort(device) {
-+	return device == PORT || String(device || '').indexOf(PORT + '.') == 0;
++	return PORTS.some(port => device == port || String(device || '').indexOf(port + '.') == 0);
 +}
 +
 +return baseclass.extend({
-+	inspect(network, firewall) {
++	inspect(network, firewall, port = 'lan2p5') {
++		const PORT = network.wan?.device || network.wan6?.device || 'lan2p5';
 +		const bridges = sections(network, 'device').filter(id => network[id].name == 'br-lan' && network[id].type == 'bridge');
 +		const zones = sections(firewall, 'zone').filter(id => firewall[id].name == 'wan');
 +		const fail = reason => ({ role: 'custom', supported: false, reason: reason });
 +		if (bridges.length != 1 || network.lan?.device != 'br-lan' || zones.length != 1)
 +			return fail('Cần cấu hình LAN br-lan và vùng tường lửa WAN tiêu chuẩn.');
++		if (!PORTS.includes(port) || !PORTS.includes(PORT))
++			return fail('WAN không dùng cổng vật lý tiêu chuẩn. Hãy dùng Mạng → Giao diện.');
 +		const bridge = bridges[0], ports = list(network[bridge].ports);
 +		if (network[bridge].vlan_filtering == '1' || sections(network, 'bridge-vlan').some(id => network[id].device == 'br-lan'))
 +			return fail('Mạng đang dùng VLAN trên bridge. Hãy đổi vai trò cổng trong Mạng → Giao diện.');
 +		if (network[STATE] && network[STATE]['.type'] != 'xsw250ns_port')
 +			return fail('Tên cấu hình cổng đã được sử dụng.');
 +		for (const id of sections(network, 'device')) {
-+			if (usesPort(network[id].name) && network[id].name != PORT || list(network[id].ports).some(p => usesPort(p) && p != PORT))
-+				return fail('Cổng 2.5G đang dùng VLAN. Hãy dùng Mạng → Giao diện.');
++			if (usesPort(network[id].name) && !PORTS.includes(network[id].name) || list(network[id].ports).some(p => usesPort(p) && !PORTS.includes(p)))
++				return fail('Cổng mạng đang dùng VLAN. Hãy dùng Mạng → Giao diện.');
 +			if (id != bridge && list(network[id].ports).some(usesPort))
-+				return fail('Cổng 2.5G đang thuộc một bridge hoặc nhóm cổng khác.');
++				return fail('Cổng mạng đang thuộc một bridge hoặc nhóm cổng khác.');
 +			if (usesPort(network[id].ifname))
-+				return fail('Cổng 2.5G đang dùng cấu hình VLAN hoặc thiết bị nâng cao.');
++				return fail('Cổng mạng đang dùng cấu hình VLAN hoặc thiết bị nâng cao.');
 +		}
 +		for (const id of sections(network, 'interface')) {
 +			const s = network[id];
 +			if (usesPort(s.device) && (id != 'wan' && id != 'wan6' || s.device != PORT))
-+				return fail('Cổng 2.5G đang dùng interface hoặc VLAN tùy chỉnh.');
++				return fail('Cổng mạng đang dùng interface hoặc VLAN tùy chỉnh.');
 +			if (list(s.ifname).some(usesPort) || s.device == '@wan' && id != 'wan6')
-+				return fail('Cổng 2.5G có cấu hình phụ thuộc; hãy dùng Mạng → Giao diện.');
++				return fail('Cổng mạng có cấu hình phụ thuộc; hãy dùng Mạng → Giao diện.');
 +		}
 +		for (const id of ['wan', 'wan6']) {
 +			const s = network[id];
@@ -396,13 +398,13 @@ index 0000000000..4026d49f79
 +		const activeWAN = ['wan', 'wan6'].some(id => network[id] && network[id].disabled != '1');
 +		if (inLAN && activeWAN)
 +			return fail('Cổng đang đồng thời gán vào LAN và WAN. Hãy kiểm tra Mạng → Giao diện.');
-+		return { supported: true, bridge: bridge, zone: zones[0], role: inLAN ? 'lan' : activeWAN ? 'wan' : 'unused' };
++		return { supported: true, bridge: bridge, zone: zones[0], wanPort: PORT, role: ports.includes(port) ? 'lan' : activeWAN && port == PORT ? 'wan' : 'unused' };
 +	},
 +
-+	plan(network, firewall, role) {
++	plan(network, firewall, role, PORT = 'lan2p5') {
 +		if (role != 'lan' && role != 'wan')
 +			throw new Error('Vai trò cổng không hợp lệ.');
-+		const status = this.inspect(network, firewall);
++		const status = this.inspect(network, firewall, PORT);
 +		if (!status.supported)
 +			throw new Error(status.reason);
 +		if (status.role == role)
@@ -411,7 +413,9 @@ index 0000000000..4026d49f79
 +		const set = (config, section, option, value) => ops.push({ config, section, option, value });
 +		const add = (config, section, type) => ops.push({ config, section, type });
 +		const ports = list(network[status.bridge].ports).filter(p => p != PORT);
-+		if (role == 'lan') {
++		if (role == 'lan' && status.wanPort != PORT) {
++			ports.push(PORT);
++		} else if (role == 'lan') {
 +			const enabled = ['wan', 'wan6'].filter(id => network[id] && network[id].disabled != '1');
 +			if (!network[STATE])
 +				add('network', STATE, 'xsw250ns_port');
@@ -420,6 +424,10 @@ index 0000000000..4026d49f79
 +				set('network', id, 'disabled', '1');
 +			ports.push(PORT);
 +		} else {
++			if (status.wanPort != PORT && !ports.includes(status.wanPort))
++				ports.push(status.wanPort);
++			if (!ports.some(p => PORTS.includes(p)))
++				throw new Error('Phải giữ ít nhất một cổng LAN để quản trị.');
 +			const restore = list(network[STATE]?.disabled_interfaces);
 +			for (const id of ['wan', 'wan6']) {
 +				if (id == 'wan6' && !network[id])
@@ -429,6 +437,8 @@ index 0000000000..4026d49f79
 +					set('network', id, 'proto', 'dhcp');
 +					set('network', id, 'device', PORT);
 +				}
++				if (id == 'wan' || network[id]?.device != '@wan')
++					set('network', id, 'device', PORT);
 +				if (id == 'wan' || restore.includes(id))
 +					set('network', id, 'disabled', null);
 +			}
@@ -898,7 +908,7 @@ new file mode 100755
 +	rm -rf /etc/xsw250ns-hotfix /etc/xsw250ns-hotfix-install-backup
 +	# An old add-on may have left its build ID in overlay. Refresh only this
 +	# firmware-owned marker from the new immutable lower image, when available.
-+	if [ "$(cat /rom/etc/xsw250ns-build-id 2>/dev/null)" = 'xsw250ns-20261104-r5-usb-nas' ]; then
++	if [ "$(cat /rom/etc/xsw250ns-build-id 2>/dev/null)" = 'xsw250ns-20261107-r6-security-ports-candidate' ]; then
 +		cmp -s /rom/etc/xsw250ns-build-id /etc/xsw250ns-build-id ||
 +			cp /rom/etc/xsw250ns-build-id /etc/xsw250ns-build-id
 +	fi
@@ -967,7 +977,7 @@ new file mode 100644
 --- /dev/null
 +++ b/target/linux/airoha/an7581/base-files/etc/xsw250ns-build-id
 @@ -0,0 +1,1 @@
-+xsw250ns-20261104-r5-usb-nas
++xsw250ns-20261107-r6-security-ports-candidate
 diff --git a/target/linux/airoha/an7581/base-files/usr/libexec/xsw250ns-link-report b/target/linux/airoha/an7581/base-files/usr/libexec/xsw250ns-link-report
 new file mode 100755
 --- /dev/null
@@ -1179,7 +1189,7 @@ diff --git a/target/linux/airoha/an7581/base-files/usr/share/ucode/xsw250ns/diag
 new file mode 100644
 --- /dev/null
 +++ b/target/linux/airoha/an7581/base-files/usr/share/ucode/xsw250ns/diagnostics.uc
-@@ -0,0 +1,337 @@
+@@ -0,0 +1,346 @@
 +'use strict';
 +
 +import * as fs from 'fs';
@@ -1249,7 +1259,7 @@ new file mode 100644
 +				for (let key, val in s)
 +					if (match(key, /(pass|secret|token|key|ssid|username|hostname|clientid)/i))
 +						for (let v in type(val) == 'array' ? val : [val])
-+							if (type(v) == 'string' && length(v) >= 4) push(hidden, v);
++							if (type(v) == 'string' && length(v) > 0) push(hidden, v);
 +			});
 +		} catch (e) { /* An absent optional package is not a collection failure. */ }
 +	}
@@ -1258,15 +1268,24 @@ new file mode 100644
 +
 +export function redact(text, hidden) {
 +	let out = '' + (text ?? '');
-+	for (let secret in sort(hidden ?? [], (a, b) => length(b) - length(a)))
-+		if (type(secret) == 'string' && length(secret) >= 4)
-+			out = join('[HIDDEN]', split(out, secret));
 +	// Never include a kernel command line: OEM bootargs can contain passwords.
 +	out = join('\n', filter(split(out, '\n'), line => !match(line, /kernel command line:|bootargs=/i)));
 +	out = replace(out, /(sk-|github_pat_|ghp_|AIza)[A-Za-z0-9_-]{8,}/g, '[TOKEN]');
 +	const private_header = match(out, /-----BEGIN[^\n]*PRIVATE KEY-----/);
 +	if (private_header) out = substr(out, 0, index(out, private_header[0])) + '[PRIVATE KEY REMOVED]';
 +	out = replace(out, /((password|passwd|secret|token|psk|ssid|username|serial|authorization|bearer|api[_-]?key)["' \t]*[:= ]+)[^\r\n]*/gi, '$1[HIDDEN]');
++	out = replace(out, /([a-z][a-z0-9+.-]*:\/\/)[^[:space:]\/@]+@/gi, '$1[URL-CREDENTIALS]@');
++	const secrets = sort(filter(hidden ?? [], v => type(v) == 'string' && length(v) > 0),
++		(a, b) => length(b) - length(a));
++	let masked = '', pos = 0;
++	while (pos < length(out)) {
++		let found = null;
++		for (let secret in secrets)
++			if (substr(out, pos, length(secret)) == secret) { found = secret; break; }
++		if (found != null) { masked += '[HIDDEN]'; pos += length(found); }
++		else { masked += substr(out, pos, 1); pos++; }
++	}
++	out = masked;
 +	return out;
 +}
 +
@@ -1577,7 +1596,7 @@ diff --git a/target/linux/airoha/an7581/base-files/www/luci-static/resources/vie
 new file mode 100644
 --- /dev/null
 +++ b/target/linux/airoha/an7581/base-files/www/luci-static/resources/view/status/include/98_xsw250ns_port_v2.js
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,101 @@
 +'use strict';
 +'require baseclass';
 +'require rpc';
@@ -1594,7 +1613,7 @@ new file mode 100644
 +}
 +
 +return baseclass.extend({
-+	title: 'Cổng 2.5G LAN/WAN',
++	title: 'LAN/WAN — 2.5G và LAN 1–4',
 +
 +	async load() {
 +		const info = await board();
@@ -1608,7 +1627,7 @@ new file mode 100644
 +		return this.snapshot;
 +	},
 +
-+	async handleApply(role) {
++	async handleApply(role, port) {
 +		if (this.busy)
 +			return;
 +		this.busy = true;
@@ -1625,7 +1644,7 @@ new file mode 100644
 +				cursor.sections(name, null, s => { result[s['.name']] = s; });
 +				return result;
 +			};
-+			const ops = portrole.plan(values('network'), values('firewall'), role);
++			const ops = portrole.plan(values('network'), values('firewall'), role, port);
 +			if (!ops.length)
 +				return;
 +			for (const op of ops) {
@@ -1638,7 +1657,7 @@ new file mode 100644
 +				throw new Error('Có thay đổi cấu hình mới từ phiên này. Hãy xử lý thay đổi đang chờ trước.');
 +			await cursor.save();
 +			await ui.changes.init();
-+			this.selectedRole = null;
++			this.selectedRoles = {};
 +			ui.changes.apply(true);
 +		} catch (error) {
 +			ui.addNotification(null, E('p', {}, error.message || String(error)), 'error');
@@ -1650,10 +1669,12 @@ new file mode 100644
 +	render(data) {
 +		if (!data)
 +			return null;
-+		const status = portrole.inspect(data[0], data[1]);
-+		const labels = { lan: 'LAN — cùng mạng với 4 cổng LAN 1G', wan: 'WAN — kết nối Internet', unused: 'Chưa gán vai trò', custom: 'Cấu hình tùy chỉnh' };
++		this.selectedRoles ||= {};
++		return E('div', {}, ['lan2p5', 'lan1', 'lan2', 'lan3', 'lan4'].map(port => {
++		const status = portrole.inspect(data[0], data[1], port);
++		const labels = { lan: 'LAN', wan: 'WAN — kết nối Internet', unused: 'Chưa gán vai trò', custom: 'Cấu hình tùy chỉnh' };
 +		const writable = data[2] && data[3];
-+		const selected = this.selectedRole || (status.role == 'lan' ? 'lan' : 'wan');
++		const selected = this.selectedRoles[port] || (status.role == 'lan' ? 'lan' : 'wan');
 +		const select = E('select', { 'class': 'cbi-input-select', 'disabled': this.busy || !writable || !status.supported ? true : null }, [
 +			E('option', { value: 'lan', selected: selected == 'lan' ? true : null }, 'LAN'),
 +			E('option', { value: 'wan', selected: selected == 'wan' ? true : null }, 'WAN')
@@ -1661,19 +1682,20 @@ new file mode 100644
 +		const button = E('button', {
 +			'class': 'cbi-button cbi-button-apply',
 +			'disabled': this.busy || !writable || !status.supported || selected == status.role ? true : null,
-+			'click': ui.createHandlerFn(this, () => this.handleApply(select.value))
++			'click': ui.createHandlerFn(this, () => this.handleApply(select.value, port))
 +		}, 'Lưu & áp dụng');
 +		select.addEventListener('change', () => {
-+			this.selectedRole = select.value;
++			this.selectedRoles[port] = select.value;
 +			button.disabled = this.busy || !writable || !status.supported || select.value == status.role;
 +		});
 +		return E('div', {}, [
-+			E('p', {}, ['Vai trò hiện tại: ', E('strong', {}, labels[status.role])]),
++			E('p', {}, [port.toUpperCase() + ' — vai trò hiện tại: ', E('strong', {}, labels[status.role])]),
 +			E('div', { 'class': 'cbi-value' }, [select, ' ', button]),
-+			E('p', { 'class': 'cbi-value-description' }, status.reason || 'Cắm máy tính quản trị vào một cổng LAN 1G trước khi chuyển. Chuyển sang LAN sẽ ngắt đường Internet qua cổng 2.5G; chuyển lại WAN sẽ giữ cấu hình WAN đã có, hoặc dùng DHCP nếu chưa có.'),
++			E('p', { 'class': 'cbi-value-description' }, status.reason || 'Chọn một cổng WAN; WAN cũ trở về LAN, giữ cấu hình DHCP/PPPoE. Quản trị qua cổng LAN khác khi chuyển. Không phải nhiều WAN đồng thời.'),
 +			!writable ? E('p', {}, 'Tài khoản hiện tại chỉ có quyền xem.') : null,
 +			E('a', { href: L.url('admin/network/network') }, 'Cấu hình mạng nâng cao')
 +		]);
++		}));
 +	}
 +});
 diff --git a/target/linux/airoha/an7581/base-files/www/luci-static/resources/view/system/startup-xsw250ns-v2.js b/target/linux/airoha/an7581/base-files/www/luci-static/resources/view/system/startup-xsw250ns-v2.js

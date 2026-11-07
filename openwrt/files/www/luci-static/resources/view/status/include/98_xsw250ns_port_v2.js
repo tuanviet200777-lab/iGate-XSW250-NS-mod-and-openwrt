@@ -14,7 +14,7 @@ function hasChanges(changes) {
 }
 
 return baseclass.extend({
-	title: 'Cổng 2.5G LAN/WAN',
+	title: 'LAN/WAN — 2.5G và LAN 1–4',
 
 	async load() {
 		const info = await board();
@@ -28,7 +28,7 @@ return baseclass.extend({
 		return this.snapshot;
 	},
 
-	async handleApply(role) {
+	async handleApply(role, port) {
 		if (this.busy)
 			return;
 		this.busy = true;
@@ -45,7 +45,7 @@ return baseclass.extend({
 				cursor.sections(name, null, s => { result[s['.name']] = s; });
 				return result;
 			};
-			const ops = portrole.plan(values('network'), values('firewall'), role);
+			const ops = portrole.plan(values('network'), values('firewall'), role, port);
 			if (!ops.length)
 				return;
 			for (const op of ops) {
@@ -58,7 +58,7 @@ return baseclass.extend({
 				throw new Error('Có thay đổi cấu hình mới từ phiên này. Hãy xử lý thay đổi đang chờ trước.');
 			await cursor.save();
 			await ui.changes.init();
-			this.selectedRole = null;
+			this.selectedRoles = {};
 			ui.changes.apply(true);
 		} catch (error) {
 			ui.addNotification(null, E('p', {}, error.message || String(error)), 'error');
@@ -70,10 +70,12 @@ return baseclass.extend({
 	render(data) {
 		if (!data)
 			return null;
-		const status = portrole.inspect(data[0], data[1]);
-		const labels = { lan: 'LAN — cùng mạng với 4 cổng LAN 1G', wan: 'WAN — kết nối Internet', unused: 'Chưa gán vai trò', custom: 'Cấu hình tùy chỉnh' };
+		this.selectedRoles ||= {};
+		return E('div', {}, ['lan2p5', 'lan1', 'lan2', 'lan3', 'lan4'].map(port => {
+		const status = portrole.inspect(data[0], data[1], port);
+		const labels = { lan: 'LAN', wan: 'WAN — kết nối Internet', unused: 'Chưa gán vai trò', custom: 'Cấu hình tùy chỉnh' };
 		const writable = data[2] && data[3];
-		const selected = this.selectedRole || (status.role == 'lan' ? 'lan' : 'wan');
+		const selected = this.selectedRoles[port] || (status.role == 'lan' ? 'lan' : 'wan');
 		const select = E('select', { 'class': 'cbi-input-select', 'disabled': this.busy || !writable || !status.supported ? true : null }, [
 			E('option', { value: 'lan', selected: selected == 'lan' ? true : null }, 'LAN'),
 			E('option', { value: 'wan', selected: selected == 'wan' ? true : null }, 'WAN')
@@ -81,18 +83,19 @@ return baseclass.extend({
 		const button = E('button', {
 			'class': 'cbi-button cbi-button-apply',
 			'disabled': this.busy || !writable || !status.supported || selected == status.role ? true : null,
-			'click': ui.createHandlerFn(this, () => this.handleApply(select.value))
+			'click': ui.createHandlerFn(this, () => this.handleApply(select.value, port))
 		}, 'Lưu & áp dụng');
 		select.addEventListener('change', () => {
-			this.selectedRole = select.value;
+			this.selectedRoles[port] = select.value;
 			button.disabled = this.busy || !writable || !status.supported || select.value == status.role;
 		});
 		return E('div', {}, [
-			E('p', {}, ['Vai trò hiện tại: ', E('strong', {}, labels[status.role])]),
+			E('p', {}, [port.toUpperCase() + ' — vai trò hiện tại: ', E('strong', {}, labels[status.role])]),
 			E('div', { 'class': 'cbi-value' }, [select, ' ', button]),
-			E('p', { 'class': 'cbi-value-description' }, status.reason || 'Cắm máy tính quản trị vào một cổng LAN 1G trước khi chuyển. Chuyển sang LAN sẽ ngắt đường Internet qua cổng 2.5G; chuyển lại WAN sẽ giữ cấu hình WAN đã có, hoặc dùng DHCP nếu chưa có.'),
+			E('p', { 'class': 'cbi-value-description' }, status.reason || 'Chọn một cổng WAN; WAN cũ trở về LAN, giữ cấu hình DHCP/PPPoE. Quản trị qua cổng LAN khác khi chuyển. Không phải nhiều WAN đồng thời.'),
 			!writable ? E('p', {}, 'Tài khoản hiện tại chỉ có quyền xem.') : null,
 			E('a', { href: L.url('admin/network/network') }, 'Cấu hình mạng nâng cao')
 		]);
+		}));
 	}
 });

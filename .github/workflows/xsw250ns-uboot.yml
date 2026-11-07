@@ -19,6 +19,8 @@ jobs:
       - name: Fault-inject the actual restore command with synthetic backup data
         shell: bash
         run: |
+          python3 uboot/tests/test_safe_usb_input.py
+          python3 uboot/tests/test_safe_usb_output.py
           python3 uboot/tests/make-synthetic-fixture.py "$RUNNER_TEMP/fixture" "$RUNNER_TEMP/fixture-layout.h"
           gcc -O2 -std=c11 -Wall -Wextra -Werror -Wno-unused-function -Wno-unused-parameter -Iuboot/tests -DXSWSTOCK_LAYOUT_HEADER="\"$RUNNER_TEMP/fixture-layout.h\"" uboot/tests/test-command.c -lcrypto -o "$RUNNER_TEMP/test-command"
           "$RUNNER_TEMP/test-command" "$RUNNER_TEMP/fixture" "$RUNNER_TEMP/host-command-tests.json" > "$RUNNER_TEMP/host-command-tests.log"

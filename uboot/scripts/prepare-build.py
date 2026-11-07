@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """Prepare the checksum-pinned U-Boot source and apply the board overlay."""
+
+if not __debug__:
+    raise RuntimeError("Refusing optimized Python: integrity checks required")
 from pathlib import Path
 import hashlib,json,shutil,subprocess,sys,tarfile,urllib.request
 

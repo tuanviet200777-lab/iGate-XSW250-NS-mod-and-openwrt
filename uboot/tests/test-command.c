@@ -12,6 +12,7 @@ static int bootloader_seen,write_region_count,previous_region=-1;
 static unsigned int observed_regions[8];
 static uint64_t last_write_offset;
 static int existing_menu_count;
+static const char *fail_env;
 static char added_menu_key[32];
 static int total_tests;
 static const char *current_name;
@@ -116,6 +117,7 @@ static int cli_readline(const char *prompt)
 {(void)prompt;strcpy(console_buffer,cancel?"cancel":"RESTORE-STOCK");return strlen(console_buffer);}
 static int env_set(const char *name,const char *value)
 {
+    if(fail_env && !strcmp(name,fail_env))return -1;
     if(strstr(value,"xswstock restore"))snprintf(added_menu_key,sizeof(added_menu_key),"%s",name);
     return 0;
 }
@@ -134,6 +136,7 @@ static void setup(const char *name)
 	FILE *f;
 	if(stage_size)release_stage();
 	flash_changed=identity_verified=false;
+	fail_env=NULL;
 	missing=short_file=corrupt=bad_block=-1;
 	fail_erase=fail_write=fail_readback=fail_identity=wrong_board=wrong_geometry=0;
 	cancel=usb_unavailable=detach_failure=erase_count=write_count=reset_count=usb_starts=0;
@@ -181,6 +184,9 @@ int main(int argc,char **argv)
 	setup("different calibration identity rejected");fail_identity=1;no_write();
 	setup("cancel confirmation performs no writes");cancel=1;no_write();
 	setup("UBI detach failure prevents erase");ubi_devices[0]=(void *)1;detach_failure=1;no_write();
+	setup("bootcmd failure prevents writes");fail_env="bootcmd";no_write();
+	setup("bootmenu_delay failure prevents writes");fail_env="bootmenu_delay";no_write();
+	setup("bootdelay failure prevents writes");fail_env="bootdelay";no_write();
 	setup("complete restore writes correct extents, bootloader last, resets once");assert(call("restore")==0);complete();pass();
 	setup("erase failure preserves staged RAM and does not reboot");fail_erase=2;assert(call("restore")==1);assert(staged&&flash_changed&&!reset_count);pass();
 	setup("write failure does not reboot; retry succeeds without USB");fail_write=3;assert(call("restore")==1);assert(staged&&flash_changed&&!reset_count);fail_write=0;usb_unavailable=1;erase_count=write_count=write_region_count=0;previous_region=-1;assert(call("retry")==0);complete();pass();

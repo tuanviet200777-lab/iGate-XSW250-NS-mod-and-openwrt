@@ -26,6 +26,7 @@ jobs:
           free -m
       - name: Check FIT import, recovery layout and NAND shell fixtures
         run: |
+          node openwrt/tests/test_portrole.js
           python3 openwrt/tests/test_fit_import.py
           python3 openwrt/tests/test_recovery_layout.py
           python3 openwrt/tests/test_reader.py
@@ -66,6 +67,15 @@ jobs:
         run: |
           set -o pipefail
           python3 openwrt/scripts/check-built-images.py "$RUNNER_TEMP/xsw250ns-build/bin/targets/airoha/an7581" "$RUNNER_TEMP/xsw250ns-verification" 2>&1 | tee "$RUNNER_TEMP/xsw250ns-native-verification.log"
+      - name: Package verified sysupgrade and recovery
+        run: python3 openwrt/scripts/package-firmware.py "$RUNNER_TEMP/xsw250ns-build/bin/targets/airoha/an7581" "$RUNNER_TEMP/xsw250ns-sysupgrade-recovery.zip"
+      - name: Upload two-image ZIP
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: xsw250ns-sysupgrade-recovery-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/xsw250ns-sysupgrade-recovery.zip
+            ${{ runner.temp }}/xsw250ns-sysupgrade-recovery.verification.json
       - name: Preserve verification evidence and logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

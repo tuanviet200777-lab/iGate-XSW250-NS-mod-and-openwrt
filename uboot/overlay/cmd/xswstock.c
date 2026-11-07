@@ -85,7 +85,7 @@ static int validate_staged(void)
 
 static int stage_usb(void)
 {
-	char device[16] = "", path[96], candidate[16];
+	char device[32] = "", path[96], candidate[32];
 	loff_t size, actual;
 	phys_size_t total = SZ_128K, cursor = 0;
 	int dev, part;
@@ -269,9 +269,11 @@ static int do_xswstock(struct cmd_tbl *cmdtp, int flag, int argc, char *const ar
 		puts("STOP: cannot detach UBI\n");
 		goto out_mtd;
 	}
-	env_set("bootcmd", "false");
-	env_set("bootmenu_delay", "-1");
-	env_set("bootdelay", "-1");
+	if (env_set("bootcmd", "false") || env_set("bootmenu_delay", "-1") ||
+	    env_set("bootdelay", "-1")) {
+		puts("STOP: cannot disable autoboot; no new flash writes.\n");
+		goto out_mtd;
+	}
 	for (i = 0; i < ARRAY_SIZE(write_order); i++)
 		if (write_verified(mtd, write_order[i])) {
 			puts("RESTORE INCOMPLETE. KEEP POWER ON. Use xswstock retry.\n");

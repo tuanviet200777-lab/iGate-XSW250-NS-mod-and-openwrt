@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """Check FIT payload hashes and board identity without running target code."""
+
+if not __debug__:
+    raise RuntimeError("Refusing optimized Python: integrity checks required")
 import gzip, hashlib, lzma, struct, sys, zlib
 from pathlib import Path
 

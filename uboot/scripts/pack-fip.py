@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """Replace BL33 while retaining the exact supplied compressed BL31 payload."""
+
+if not __debug__:
+    raise RuntimeError("Refusing optimized Python: integrity checks required")
 from pathlib import Path
 import hashlib,json,lzma,struct,sys
 

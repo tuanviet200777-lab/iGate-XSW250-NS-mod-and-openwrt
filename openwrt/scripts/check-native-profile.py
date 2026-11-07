@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """Fail if Kconfig silently dropped a required USB/NAS feature."""
+
+if not __debug__:
+    raise RuntimeError("Refusing optimized Python: integrity checks required")
 import json,pathlib,re,subprocess,sys
 root=pathlib.Path(sys.argv[1]);config=(root/'.config').read_text()
 required=['TARGET_airoha_an7581_DEVICE_vnpt_xsw250ns-ubi','PACKAGE_block-mount','PACKAGE_blockd','PACKAGE_kmod-usb3','PACKAGE_kmod-usb-xhci-mtk','PACKAGE_kmod-usb-storage','PACKAGE_kmod-usb-storage-uas','PACKAGE_kmod-fs-ext4','PACKAGE_kmod-fs-exfat','PACKAGE_kmod-fs-ntfs3','PACKAGE_kmod-fs-vfat','PACKAGE_usbutils','PACKAGE_samba4-server','PACKAGE_luci-app-samba4','PACKAGE_openvpn-openssl']

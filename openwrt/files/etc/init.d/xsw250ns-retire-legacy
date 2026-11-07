@@ -24,7 +24,7 @@ start() {
 	rm -rf /etc/xsw250ns-hotfix /etc/xsw250ns-hotfix-install-backup
 	# An old add-on may have left its build ID in overlay. Refresh only this
 	# firmware-owned marker from the new immutable lower image, when available.
-	if [ "$(cat /rom/etc/xsw250ns-build-id 2>/dev/null)" = 'xsw250ns-20261104-r5-usb-nas' ]; then
+	if [ "$(cat /rom/etc/xsw250ns-build-id 2>/dev/null)" = 'xsw250ns-20261107-r6-security-ports-candidate' ]; then
 		cmp -s /rom/etc/xsw250ns-build-id /etc/xsw250ns-build-id ||
 			cp /rom/etc/xsw250ns-build-id /etc/xsw250ns-build-id
 	fi

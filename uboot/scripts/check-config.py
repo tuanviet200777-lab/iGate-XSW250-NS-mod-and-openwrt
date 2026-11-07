@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+if not __debug__:
+    raise RuntimeError("Refusing optimized Python: integrity checks required")
 from pathlib import Path
 import sys
 config=Path(sys.argv[1]).read_text()

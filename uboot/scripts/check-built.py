@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """Inspect the actual ARM64 U-Boot, DTB and FIP; no device access."""
+
+if not __debug__:
+    raise RuntimeError("Refusing optimized Python: integrity checks required")
 from pathlib import Path
 import hashlib,json,lzma,struct,sys
 
