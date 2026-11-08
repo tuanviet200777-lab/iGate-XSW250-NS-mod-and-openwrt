@@ -15,6 +15,9 @@ static int existing_menu_count;
 static const char *fail_env;
 static char added_menu_key[32];
 static int total_tests;
+static u8 *backup_data[12];
+static size_t backup_len[12];
+static int backup_writes,backup_read_corrupt;
 static const char *current_name;
 
 static int file_index(const char *path)
@@ -59,6 +62,7 @@ static int fs_set_blk_dev(const char *type,const char *device,int fs)
 static int fs_size(const char *path,loff_t *size)
 {
 	int i=file_index(path);FILE *f;
+	if(strstr(path,"XSW250NS-DUMP/READY.TXT")){*size=(loff_t)strlen("XSW250NS-RAW-BACKUP-V1\n");return 0;}
 	if(i<0||i==missing)return -1;
 	f=open_input(i);if(!f)return -1;
 	fseek(f,0,SEEK_END);*size=ftell(f);fclose(f);
@@ -67,11 +71,39 @@ static int fs_size(const char *path,loff_t *size)
 }
 static int fs_read(const char *path,phys_addr_t addr,loff_t offset,loff_t len,loff_t *actual)
 {
-	int i=file_index(path);FILE *f=open_input(i);
+	int i=file_index(path);FILE *f;
+	if(strstr(path,"XSW250NS-DUMP/READY.TXT")){
+		const char *marker="XSW250NS-RAW-BACKUP-V1\\n";
+		assert(offset==0 && len==(loff_t)strlen(marker));
+		memcpy((void *)addr,marker,len);*actual=len;return 0;
+	}
+	if(strstr(path,"XSW250NS-DUMP/")){
+		assert(i>=0 && backup_data[i] && offset+len<=(loff_t)backup_len[i]);
+		memcpy((void *)addr,backup_data[i]+offset,len);*actual=len;
+		if(backup_read_corrupt && backup_writes)((u8 *)addr)[0]^=1;
+		return 0;
+	}
+	f=open_input(i);
 	assert(f && offset==0);
 	*actual=fread((void *)addr,1,len,f);fclose(f);
 	if(i==corrupt)((u8 *)addr)[len/2]^=1;
 	return 0;
+}
+static int fs_exists(const char *path)
+{
+	int i=file_index(path);
+	assert(strstr(path,"XSW250NS-DUMP/") && i>=0);
+	return backup_data[i]!=NULL;
+}
+static int fs_write(const char *path,phys_addr_t addr,loff_t offset,loff_t len,loff_t *actual)
+{
+	int i=file_index(path);
+	assert(strstr(path,"XSW250NS-DUMP/") && i>=0 && offset>=0 && len>0);
+	assert(offset+len<=(loff_t)stock_files[i].size);
+	if(!backup_data[i]){backup_data[i]=malloc(stock_files[i].size);assert(backup_data[i]);}
+	assert((size_t)offset==backup_len[i]);
+	memcpy(backup_data[i]+offset,(void *)addr,len);
+	backup_len[i]=offset+len;backup_writes++;*actual=len;return 0;
 }
 static int mtd_probe_devices(void){return 0;}
 static struct mtd_info *get_mtd_device_nm(const char *name)
@@ -134,6 +166,8 @@ static int ofnode_device_is_compatible(int node,const char *compat)
 static void setup(const char *name)
 {
 	FILE *f;
+	for(int i=0;i<12;i++){free(backup_data[i]);backup_data[i]=NULL;backup_len[i]=0;}
+	backup_writes=backup_read_corrupt=0;
 	if(stage_size)release_stage();
 	flash_changed=identity_verified=false;
 	fail_env=NULL;
@@ -193,6 +227,13 @@ int main(int argc,char **argv)
 	setup("retry survives a partially erased reservearea identity block");fail_write=731;assert(call("restore")==1);assert(staged&&flash_changed&&!reset_count);assert(digest_matches(nand_data+0xde0c000,0x1000,stock_eeprom_sha)!=0);fail_write=0;usb_unavailable=1;erase_count=write_count=write_region_count=0;previous_region=-1;assert(call("retry")==0);complete();pass();
 	setup("readback mismatch stops restore without reboot");fail_readback=1;assert(call("restore")==1);assert(staged&&flash_changed&&!reset_count);pass();
 	setup("retry without retained stage rejected");assert(call("retry")==1);assert(!erase_count&&!write_count&&!reset_count);pass();
+	setup("layout checks NAND without USB or flash writes");assert(call("layout")==0);assert(!erase_count&&!write_count&&!usb_starts);pass();
+	setup("raw backup refuses missing USB");usb_unavailable=1;assert(call("backup")==1);assert(!erase_count&&!write_count&&!backup_writes);pass();
+	setup("raw backup refuses bad NAND block before USB writes");bad_block=0x100000;assert(call("backup")==1);assert(!erase_count&&!write_count&&!backup_writes);pass();
+	setup("raw backup copies all 12 ranges with per-chunk USB readback");assert(call("backup")==0);assert(backup_writes>12);
+	for(int i=0;i<12;i++){assert(backup_len[i]==stock_files[i].size);assert(!memcmp(backup_data[i],nand_data+stock_files[i].offset,backup_len[i]));}
+	assert(!erase_count&&!write_count&&!reset_count);pass();
+	setup("raw backup refuses a corrupted USB readback");backup_read_corrupt=1;assert(call("backup")==1);assert(backup_writes>0&&!erase_count&&!write_count);pass();
 	report=fopen(argv[2],"wb");assert(report);
 	fprintf(report,"{\"tests\":%d,\"passed\":%d,\"actual_production_command_compiled\":true,\"physical_flash_performed\":false,\"scope\":\"host API fault injection, in-memory NAND; USB/PHY not emulated\"}\n",total_tests,total_tests);fclose(report);
 	if(stage_size)release_stage();

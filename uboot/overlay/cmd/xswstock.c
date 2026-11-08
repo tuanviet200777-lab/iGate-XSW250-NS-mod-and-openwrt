@@ -187,6 +187,153 @@ static int check_flash(struct mtd_info *mtd)
 	return 0;
 }
 
+
+/* The stock-layout names describe raw byte ranges, not the live Linux
+ * partition table. Read data area through ECC; never export OOB/BMT. */
+static int check_raw_layout(struct mtd_info *mtd)
+{
+	unsigned int i;
+
+	if (mtd->parent || mtd->size != SZ_256M ||
+	    mtd->erasesize != SZ_128K || mtd->writesize != SZ_2K ||
+	    !mtd_type_is_nand(mtd)) {
+		puts("STOP: unexpected SPI NAND geometry\n");
+		return -1;
+	}
+	for (i = 0; i < ARRAY_SIZE(write_order); i++) {
+		const struct stock_file *f = &stock_files[write_order[i]];
+		u32 off;
+
+		if ((f->offset | f->size) & (SZ_128K - 1) ||
+		    f->offset > mtd->size || f->size > mtd->size - f->offset)
+			return -1;
+		for (off = f->offset; off < f->offset + f->size; off += SZ_128K) {
+			if (mtd_block_isbad(mtd, off)) {
+				printf("STOP: bad/unreadable NAND block 0x%x\n", off);
+				return -1;
+			}
+		}
+		printf("%s offset=0x%x size=0x%zx\n", f->name,
+		       f->offset, f->size);
+	}
+	puts("PASS: NAND geometry and 8 non-overlapping ranges\n");
+	return 0;
+}
+
+/* A separate, *non-restorable* RAW snapshot directory, selected by an exact
+ * opt-in marker. Never overwrite existing backup names or write to NAND. */
+static int choose_backup_usb(char *selected, size_t selected_len,
+			     phys_addr_t buffer)
+{
+	static const char marker[] = "XSW250NS-RAW-BACKUP-V1\n";
+	const char *path = "/XSW250NS-DUMP/READY.TXT";
+	char candidate[32];
+	loff_t size, actual;
+	int dev, part, matches = 0;
+
+	if (run_command("usb start", 0))
+		return -1;
+	for (dev = 0; dev < 8; dev++) {
+		for (part = 0; part <= 4; part++) {
+			snprintf(candidate, sizeof(candidate), "%d:%d", dev, part);
+			if (fs_set_blk_dev("usb", candidate, FS_TYPE_FAT) ||
+			    fs_size(path, &size) || size != sizeof(marker) - 1 ||
+			    fs_set_blk_dev("usb", candidate, FS_TYPE_FAT) ||
+			    fs_read(path, buffer, 0, size, &actual) ||
+			    actual != size ||
+			    memcmp(map_sysmem(buffer, size), marker, size))
+				continue;
+			if (++matches != 1) {
+				puts("STOP: multiple USB backup destinations\n");
+				return -1;
+			}
+			snprintf(selected, selected_len, "%s", candidate);
+		}
+	}
+	if (matches != 1)
+		puts("STOP: exactly one FAT USB with XSW250NS-DUMP/READY.TXT required\n");
+	return matches == 1 ? 0 : -1;
+}
+
+static int backup_usb(struct mtd_info *mtd)
+{
+	char device[32] = "", path[96];
+	phys_addr_t buffer = 0;
+	loff_t actual;
+	unsigned int i;
+	int ret = -1;
+
+	if (staged || flash_changed) {
+		puts("STOP: restore is staged/in progress; backup is not allowed\n");
+		return -1;
+	}
+	if (lmb_alloc_mem(LMB_MEM_ALLOC_MAX, ARCH_DMA_MINALIGN, &buffer,
+			  SZ_256K, LMB_NONE)) {
+		puts("STOP: no reserved RAM for USB backup buffers\n");
+		return -1;
+	}
+	if (choose_backup_usb(device, sizeof(device), buffer))
+		goto out;
+	/* All names must be absent BEFORE creating the first output file. */
+	for (i = 0; i < ARRAY_SIZE(stock_files); i++) {
+		snprintf(path, sizeof(path), "/XSW250NS-DUMP/%s",
+			 stock_files[i].name);
+		if (fs_set_blk_dev("usb", device, FS_TYPE_FAT) ||
+		    fs_exists(path)) {
+			printf("STOP: output exists or USB unavailable: %s\n", path);
+			goto out;
+		}
+	}
+	for (i = 0; i < ARRAY_SIZE(stock_files); i++) {
+		const struct stock_file *f = &stock_files[i];
+		size_t done;
+
+		snprintf(path, sizeof(path), "/XSW250NS-DUMP/%s", f->name);
+		for (done = 0; done < f->size;) {
+			size_t chunk = f->size - done;
+			size_t got;
+			int read_ret;
+
+			if (chunk > SZ_128K)
+				chunk = SZ_128K;
+			read_ret = mtd_read(mtd, f->offset + done, chunk,
+					    &got, map_sysmem(buffer, chunk));
+			if ((read_ret && !mtd_is_bitflip(read_ret)) ||
+			    got != chunk) {
+				printf("STOP: NAND read failed: %s +0x%zx\n",
+				       f->name, done);
+				goto out;
+			}
+			if (fs_set_blk_dev("usb", device, FS_TYPE_FAT) ||
+			    fs_write(path, buffer, done, chunk, &actual) ||
+			    actual != chunk ||
+			    fs_set_blk_dev("usb", device, FS_TYPE_FAT) ||
+			    fs_read(path, buffer + SZ_128K, done, chunk, &actual) ||
+			    actual != chunk ||
+			    memcmp(map_sysmem(buffer, chunk),
+				   map_sysmem(buffer + SZ_128K, chunk), chunk)) {
+				printf("STOP: USB write/readback mismatch: %s +0x%zx\n",
+				       f->name, done);
+				goto out;
+			}
+			done += chunk;
+			if (ctrlc()) {
+				puts("STOP: backup interrupted; discard partial USB files\n");
+				goto out;
+			}
+		}
+		printf("READBACK PASS: %s (%zu bytes)\n", f->name, f->size);
+	}
+	puts("PASS: 12 RAW data-area images written/read back; no NAND writes.\n");
+	puts("NOT a verified stock restore set; no ECC OOB or BMT included.\n");
+	ret = 0;
+out:
+	if (device[0])
+		run_command("usb stop", 0);
+	lmb_free(buffer, SZ_256K, LMB_NONE);
+	return ret;
+}
+
 static int write_verified(struct mtd_info *mtd, unsigned int index)
 {
 	const struct stock_file *f = &stock_files[index];
@@ -230,11 +377,25 @@ static int do_xswstock(struct cmd_tbl *cmdtp, int flag, int argc, char *const ar
 	int ret = CMD_RET_FAILURE;
 
 	if (argc != 2 || (strcmp(argv[1], "check") && strcmp(argv[1], "restore") &&
-			  strcmp(argv[1], "retry")))
+			  strcmp(argv[1], "retry") && strcmp(argv[1], "layout") &&
+			  strcmp(argv[1], "backup")))
 		return CMD_RET_USAGE;
 	if (!ofnode_device_is_compatible(ofnode_root(), "vnpt,xsw250ns-ubi")) {
 		puts("STOP: incompatible board\n");
 		return CMD_RET_FAILURE;
+	}
+	if (!strcmp(argv[1], "layout") || !strcmp(argv[1], "backup")) {
+		bool backing_up = !strcmp(argv[1], "backup");
+
+		mtd_probe_devices();
+		mtd = get_mtd_device_nm("spi-nand0");
+		if (IS_ERR_OR_NULL(mtd))
+			return CMD_RET_FAILURE;
+		ret = check_raw_layout(mtd) ? CMD_RET_FAILURE :
+		      (backing_up && backup_usb(mtd) ? CMD_RET_FAILURE :
+		       CMD_RET_SUCCESS);
+		put_mtd_device(mtd);
+		return ret;
 	}
 	restore = strcmp(argv[1], "check") != 0;
 	if (!strcmp(argv[1], "retry") && !staged) {
@@ -318,7 +479,9 @@ static int xswstock_menu_init(void)
 EVENT_SPY_SIMPLE(EVT_LAST_STAGE_INIT, xswstock_menu_init);
 
 U_BOOT_CMD(xswstock, 2, 0, do_xswstock,
-	"check or restore this XSW250NS original backup from FAT USB",
-	"check - verify all files and device without writing NAND\n"
+	"inspect, backup RAW NAND to USB, or restore original firmware",
+	"layout - inspect geometry and raw stock-layout ranges, no writes\n"
+	"xswstock backup - read NAND to empty XSW250NS-DUMP on USB; readback\n"
+	"xswstock check - verify 12 pinned stock files and device, no NAND writes\n"
 	"xswstock restore - verify, confirm, restore and reboot\n"
 	"xswstock retry - retry a failed write using retained verified RAM data");

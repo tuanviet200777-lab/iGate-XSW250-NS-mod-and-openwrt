@@ -14,6 +14,7 @@ typedef size_t phys_size_t;
 typedef int64_t loff_t;
 #define SZ_2K 0x800u
 #define SZ_128K 0x20000u
+#define SZ_256K 0x40000u
 #define SZ_256M 0x10000000u
 #define ARCH_DMA_MINALIGN 64
 #define ALIGN(v,a) (((v)+(a)-1)&~((a)-1))
@@ -42,6 +43,8 @@ static int run_command(const char *,int);
 static int fs_set_blk_dev(const char *,const char *,int);
 static int fs_size(const char *,loff_t *);
 static int fs_read(const char *,phys_addr_t,loff_t,loff_t,loff_t *);
+static int fs_write(const char *,phys_addr_t,loff_t,loff_t,loff_t *);
+static int fs_exists(const char *);
 static int mtd_probe_devices(void);
 static struct mtd_info *get_mtd_device_nm(const char *);
 static void put_mtd_device(struct mtd_info *);

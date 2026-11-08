@@ -68,3 +68,25 @@ make -j4 ARCH=arm CROSS_COMPILE=aarch64-linux-gnu-
 ```
 
 Nguồn U-Boot 2026.07 và toàn bộ patch nền được ghim trong `sources.json`; chuẩn bị nguồn kiểm tra SHA256/Git blob. Packer `scripts/pack-fip.py` bắt buộc FIP gốc có đúng SHA256 đã biết và giữ nguyên payload BL31. Workflow riêng chỉ build U-Boot, không thay firmware r5 trước đó. Không công bố các MTD backup trong artifact CI.
+
+## Kiểm tra MTD và backup dữ liệu NAND ra USB (không ghi NAND)
+
+Bản U-Boot hiện cung cấp `xswstock layout` để xác nhận chip SPI NAND
+256 MiB, eraseblock 128 KiB, page 2 KiB, bad-block và tám vùng độc lập.
+`xswstock backup` chỉ **đọc NAND** và ghi dữ liệu qua ECC sang FAT32;
+sau mỗi khối 128 KiB, U-Boot đọc lại từ USB và so byte. Không có thao tác
+xóa/ghi NAND trong lệnh backup.
+
+Để chọn đúng đích, tạo trên **một USB FAT32 duy nhất** thư mục
+`XSW250NS-DUMP` và file `READY.TXT` chứa chính xác một dòng
+`XSW250NS-RAW-BACKUP-V1` (kết thúc bằng newline). Thư mục phải trống,
+cần hơn 150 MiB dung lượng trống. Chạy `xswstock layout` rồi
+`xswstock backup` trong U-Boot nạp bằng RAM sau khi xác nhận USB.
+Nếu mất kết nối, thiếu dung lượng hoặc so byte thất bại, dừng và bỏ
+bộ file chưa hoàn chỉnh; không tự ghi đè.
+
+**Không dùng** bộ file ở `XSW250NS-DUMP` để chạy `xswstock restore`.
+Đây là snapshot các khoảng byte theo layout gốc trên NAND *hiện tại*
+(có thể đang là OpenWrt), không phải 12 ảnh firmware hãng có fingerprint
+được ghim. Không bao gồm OOB, ECC thô, BMT hay mọi byte trong chip.
+Giữ USB riêng tư vì chứa cấu hình và thông tin thiết bị.
