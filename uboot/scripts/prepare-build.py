@@ -12,18 +12,38 @@ root=Path(sys.argv[1]).resolve()
 assert not root.exists(),f'Refuse to replace existing build directory: {root}'
 root.parent.mkdir(parents=True,exist_ok=True)
 archive=root.parent/'u-boot-2026.07.tar.bz2'
+# Prefer the byte-pinned release tarball; never reuse a partial download.
+if archive.exists() and hashlib.sha256(archive.read_bytes()).hexdigest()!=spec['archive_sha256']:
+    archive.unlink()
 if not archive.exists():
     mirrors=['https://sources.cdn.openwrt.org/u-boot-2026.07.tar.bz2',spec['archive_url']]
     for url in mirrors:
-        result=subprocess.run(['curl','-4','--fail','--location','--connect-timeout','15','--max-time','300','--retry','2','-o',str(archive),url])
-        if result.returncode==0:break
-    else:raise RuntimeError('No source mirror succeeded')
-assert hashlib.sha256(archive.read_bytes()).hexdigest()==spec['archive_sha256'],'U-Boot source checksum mismatch'
-with tarfile.open(archive) as tar:
-    tar.extractall(root.parent,filter='data')
+        result=subprocess.run(['curl','-4','--fail','--location','--connect-timeout','10',
+                               '--max-time','75','--retry','1','-o',str(archive),url])
+        if result.returncode==0 and archive.exists() and (
+                hashlib.sha256(archive.read_bytes()).hexdigest()==spec['archive_sha256']):
+            break
+        archive.unlink(missing_ok=True)
 unpacked=root.parent/'u-boot-2026.07'
-assert unpacked.exists()
-unpacked.rename(root)
+if archive.exists():
+    if unpacked.exists():
+        raise RuntimeError('Refuse to overwrite extracted source')
+    with tarfile.open(archive) as tar:
+        tar.extractall(root.parent,filter='data')
+    if not unpacked.exists():
+        raise RuntimeError('Expected source directory missing')
+    unpacked.rename(root)
+else:
+    # Network fallback: exact upstream Git commit, not a moving branch/tag.
+    subprocess.run(['git','init',str(root)],check=True,stdout=subprocess.DEVNULL)
+    subprocess.run(['git','-C',str(root),'remote','add','origin',
+                    'https://github.com/u-boot/u-boot.git'],check=True)
+    subprocess.run(['git','-C',str(root),'fetch','--depth=1','--no-tags','origin',
+                    spec['upstream_commit']],check=True)
+    subprocess.run(['git','-C',str(root),'checkout','--detach','FETCH_HEAD'],check=True)
+    head=subprocess.check_output(['git','-C',str(root),'rev-parse','HEAD'],text=True).strip()
+    if head!=spec['upstream_commit']:
+        raise RuntimeError('Git source revision mismatch')
 cache=root.parent/'xsw250ns-uboot-patches'
 cache.mkdir(exist_ok=True)
 for entry in spec['patches']:
