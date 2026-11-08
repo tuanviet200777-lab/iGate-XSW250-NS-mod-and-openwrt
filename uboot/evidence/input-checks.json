@@ -1,0 +1,9 @@
+{
+  "files": 12,
+  "overlap_comparisons": 4,
+  "archive_crc": "pass",
+  "backup_archive_sha256": "118187a7e62366622bc3d1faa3f8e593feef892921b280a760e5342847336269",
+  "public_fip_sha256": "44d225b61b940e34a9a8490063688071e01f699af13cded8cc76fa19ed738779",
+  "environment_entries": 56,
+  "physical_flash_performed": false
+}

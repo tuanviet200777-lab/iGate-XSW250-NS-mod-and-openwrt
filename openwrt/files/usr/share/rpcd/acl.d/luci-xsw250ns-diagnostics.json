@@ -1,0 +1,6 @@
+{
+  "luci-xsw250ns-diagnostics": {
+    "description": "Read-only XSW250NS system diagnostics",
+    "read": { "ubus": { "luci.xsw250ns-diagnostics": ["collect"] } }
+  }
+}

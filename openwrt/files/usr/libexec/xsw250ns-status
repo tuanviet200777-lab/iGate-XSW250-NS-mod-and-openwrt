@@ -1,0 +1,92 @@
+#!/usr/bin/ucode
+'use strict';
+import * as fs from 'fs';
+import { cursor } from 'uci';
+import { connect } from 'ubus';
+import * as uloop from 'uloop';
+import { thermal, reachability } from 'xsw250ns.ledpolicy';
+import { writeStatus, removeStatus } from 'xsw250ns.state';
+
+if (trim(fs.readfile('/tmp/sysinfo/board_name') ?? '') != 'vnpt,xsw250ns-ubi') exit(0);
+const config = cursor();
+const cfg = config.get_all('xsw250ns_status', 'main') ?? {};
+if (cfg.enabled == '0') exit(0);
+const bound = (n, low, high, fallback) => match('' + n, /^[0-9]+$/) && +n >= low && +n <= high ? +n : fallback;
+const interval = bound(cfg.interval, 10, 300, 15);
+const tempOn = bound(cfg.temp_on, 60, 115, 100);
+const tempOff = min(bound(cfg.temp_off, 40, 114, 95), tempOn - 1);
+const mode = index(['internet', 'link', 'off'], cfg.tel2_mode) >= 0 ? cfg.tel2_mode : 'internet';
+const validTarget = t => type(t) == 'string' && length(t) <= 100 && !!match(t, /^[A-Za-z0-9][A-Za-z0-9.-]*$/);
+const targets = [validTarget(cfg.target1) ? cfg.target1 : '1.1.1.1', validTarget(cfg.target2) ? cfg.target2 : '9.9.9.9'];
+const paths = { tel1: '/sys/class/leds/xsw250ns:tel1', tel2: '/sys/class/leds/xsw250ns:tel2' };
+let hot = false, online = null, passes = 0, failures = 0;
+const applied = {};
+let bus = connect(null, 1);
+
+function command(argv) {
+	const p = fs.popen(argv, 'r');
+	if (!p) return false;
+	p.read('all');
+	return p.close() == 0;
+}
+
+function led(name, action) {
+	const path = paths[name];
+	if (!fs.access(path + '/brightness')) return false;
+	if (applied[name] == action) return true;
+	if (action == 'blink') {
+		fs.writefile(path + '/trigger', 'timer\n');
+		fs.writefile(path + '/delay_on', '500\n');
+		fs.writefile(path + '/delay_off', '500\n');
+	} else {
+		fs.writefile(path + '/trigger', 'none\n');
+		fs.writefile(path + '/brightness', action == 'on' ? (trim(fs.readfile(path + '/max_brightness')) || '1') : '0');
+	}
+	applied[name] = action;
+	return true;
+}
+
+function tick() {
+	const temperatures = [];
+	for (let zone in fs.glob('/sys/class/thermal/thermal_zone*') ?? []) {
+		if (trim(fs.readfile(zone + '/type') ?? '') != 'cpu-thermal') continue;
+		const raw = trim(fs.readfile(zone + '/temp') ?? '');
+		if (match(raw, /^[0-9]+$/) && +raw <= 150000) push(temperatures, +raw);
+	}
+	const temp = length(temperatures) ? max(...temperatures) : null;
+	if (temp != null) hot = thermal(hot, temp, tempOn, tempOff);
+	const tel1 = led('tel1', cfg.tel1_enabled == '0' ? 'off' : temp == null ? 'blink' : hot ? 'on' : 'off');
+	let uplinks = [];
+	try {
+		const dump = bus?.call('network.interface', 'dump') ?? {};
+		for (let iface in dump.interface ?? []) {
+			if (!iface.up) continue;
+			if (length(filter(iface.route ?? [], r => r.mask == 0 && (r.target == '0.0.0.0' || r.target == '::')))) push(uplinks, iface.interface);
+		}
+	} catch (e) { bus = connect(null, 1); }
+	if (mode != 'off') {
+		let success = length(uplinks) > 0;
+		if (mode == 'internet' && success) {
+			success = false;
+			for (let target in targets) {
+				if (command(['/usr/bin/timeout', '3', '/bin/ping', '-c', '1', '-W', '1', target])) { success = true; break; }
+			}
+		}
+		const next = reachability(online, success, passes, failures);
+		online = next.online; passes = next.passes; failures = next.failures;
+	}
+	const tel2 = led('tel2', mode == 'off' ? 'off' : online === true ? 'on' : 'blink');
+	const status = { firmware: trim(fs.readfile('/etc/xsw250ns-build-id')), uptime: +split(fs.readfile('/proc/uptime'), ' ')[0], temperature_millic: temp, temp_on: tempOn, temp_off: tempOff, overheat: hot, tel1_present: tel1, tel2_present: tel2, tel2_mode: mode, online, uplinks, consecutive_successes: passes, consecutive_failures: failures, interval, gpio_verified_on_hardware: false };
+	writeStatus(status);
+}
+
+// Let procd stop/reload the service while it is waiting between probes.
+uloop.init();
+const shutdown = uloop.signal('SIGTERM', () => uloop.end());
+let timer;
+timer = uloop.timer(1, () => { tick(); timer.set(interval * 1000); });
+uloop.run();
+led('tel1', 'off');
+led('tel2', 'off');
+removeStatus();
+uloop.done();

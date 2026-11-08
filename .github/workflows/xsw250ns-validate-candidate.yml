@@ -1,0 +1,59 @@
+name: Validate preserved XSW250NS r5 candidate
+on:
+  push:
+    branches: [codex/xsw250ns-native-build]
+    paths: [.github/workflows/xsw250ns-validate-candidate.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: sudo apt-get update && sudo apt-get install -y squashfs-tools
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ github.token }}
+          run-id: 41963638759
+          name: xsw250ns-r5-candidate-b2cb17d69347e95c57b28da71bda498b2cd9fef0
+          path: ${{ runner.temp }}/candidate
+      - name: Check unchanged native images with corrected verifier
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])
+          expected={'sysupgrade.itb':'0342ae8dee7114de5683ae7e2237b7c0cc85133e23ea531fc8c3cb16dad31283',
+                    'recovery.itb':'f79c1068096358572818e653ba7b9e2b6532a2332dc22c248612ff19930819a1'}
+          rows=[]
+          for suffix,sha in expected.items():
+              images=list((root/'candidate').rglob('*xsw250ns*'+suffix))
+              assert len(images)==1,images
+              image=images[0]
+              assert hashlib.sha256(image.read_bytes()).hexdigest()==sha,image
+              rows.append({'image':image.name,'sha256':sha})
+          output=root/'validation'
+          output.mkdir()
+          evidence={'firmware_source_commit':'b2cb17d69347e95c57b28da71bda498b2cd9fef0',
+                    'firmware_run':41963638759,'verifier_commit':os.environ['GITHUB_SHA'],
+                    'unchanged_native_images':rows,'physical_router_or_usb_tested':False}
+          (output/'candidate-provenance.json').write_text(json.dumps(evidence,indent=2)+'\n')
+          with (output/'validation.log').open('w') as log:
+              result=subprocess.run(['python3','openwrt/scripts/check-built-images.py',str(image.parent),str(output)],stdout=log,stderr=subprocess.STDOUT)
+          print((output/'validation.log').read_text())
+          raise SystemExit(result.returncode)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: xsw250ns-r5-candidate-validation-${{ github.sha }}
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/validation/*.json
+            ${{ runner.temp }}/validation/*.log

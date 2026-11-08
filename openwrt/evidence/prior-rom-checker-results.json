@@ -1,0 +1,55 @@
+[
+  {
+    "case": "legacy-false-positive",
+    "expected_exit": 0,
+    "actual_exit": 0,
+    "passed": true,
+    "stdout": "PASS legacy runtime-only checker\n",
+    "stderr": ""
+  },
+  {
+    "case": "reject-overlay-only",
+    "expected_exit": 1,
+    "actual_exit": 1,
+    "passed": true,
+    "stdout": "",
+    "stderr": "FAIL: SquashFS /rom chua co NAND fix. Add-on trong overlay khong sua duoc preinit; can dung image da sua.\n"
+  },
+  {
+    "case": "accept-correct-rom",
+    "expected_exit": 0,
+    "actual_exit": 0,
+    "passed": true,
+    "stdout": "PASS: /rom co NAND fix, reader environment doc duoc va overlay UBIFS ghi duoc.\nCan doi chieu log UART sau reboot de xac nhan het loi preinit tren may.\n",
+    "stderr": ""
+  },
+  {
+    "case": "reject-wrong-rom-hook",
+    "expected_exit": 1,
+    "actual_exit": 1,
+    "passed": true,
+    "stdout": "",
+    "stderr": "FAIL: Script preinit trong /rom khong dung ban da doi chieu.\n"
+  },
+  {
+    "case": "accept-preserved-regular-conffile",
+    "expected_exit": 0,
+    "actual_exit": 0,
+    "passed": true,
+    "stdout": "PASS: /rom co NAND fix, reader environment doc duoc va overlay UBIFS ghi duoc.\nCan doi chieu log UART sau reboot de xac nhan het loi preinit tren may.\n",
+    "stderr": ""
+  },
+  {
+    "case": "reject-missing-runtime-reader",
+    "expected_exit": 1,
+    "actual_exit": 1,
+    "passed": true,
+    "stdout": "",
+    "stderr": "FAIL: Chua tao duoc reader runtime.\n"
+  },
+  {
+    "case": "withdrawn-installer-stops-before-writing",
+    "passed": true,
+    "actual_exit": 1
+  }
+]

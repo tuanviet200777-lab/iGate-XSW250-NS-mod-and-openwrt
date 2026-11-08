@@ -1,0 +1,80 @@
+[
+  {
+    "name": "fw4 configuration compiles and live nft rules exist",
+    "passed": true,
+    "seconds": 1.78,
+    "evidence": "nft_try_fullcone: cmd /usr/sbin/nft -c 'add table inet fw4-fullcone-test; add chain inet fw4-fullcone-test dstnat { type nat hook prerouting priority -100; policy accept; fullcone; }; add chain inet fw4-fullcone-test srcnat { type nat hook postrouting priority -100; policy accept; fullcone; }; ' 2>/dev/null\nnft_try_fullcone failed, disable fullcone globally\n\u001b[33mHardware flow offloading unavailable, falling back to software offloading\u001b[m\nRuleset passes nftables check."
+  },
+  {
+    "name": "DNS daemon runs without root privileges",
+    "passed": true,
+    "seconds": 0.26,
+    "evidence": ""
+  },
+  {
+    "name": "DNS local static host resolves after UCI save and service reload",
+    "passed": true,
+    "seconds": 4.99,
+    "evidence": "Address: 198.18.99.7"
+  },
+  {
+    "name": "UCI invalid syntax rejected without changing live network",
+    "passed": true,
+    "seconds": 0.23,
+    "evidence": "10.44.1.1"
+  },
+  {
+    "name": "isolated client obtains DHCP lease from firmware dnsmasq (no QEMU DHCP)",
+    "passed": true,
+    "seconds": 3.72,
+    "evidence": "udhcpc: started, v1.38.0\nudhcpc: broadcasting discover\nudhcpc: broadcasting discover\nudhcpc: broadcasting select for 192.0.2.100, server 192.0.2.1\nudhcpc: lease of 192.0.2.100 obtained from 192.0.2.1, lease time 3600"
+  },
+  {
+    "name": "LAN client reaches DNS and router HTTP",
+    "passed": true,
+    "seconds": 0.38,
+    "evidence": "Address: 198.18.99.7"
+  },
+  {
+    "name": "WireGuard handshake and encrypted tunnel",
+    "passed": true,
+    "seconds": 2.94,
+    "evidence": "PING 10.201.1.2 (10.201.1.2): 56 data bytes\n64 bytes from 10.201.1.2: seq=0 ttl=64 time=3.293 ms\n64 bytes from 10.201.1.2: seq=1 ttl=64 time=2.310 ms\n64 bytes from 10.201.1.2: seq=2 ttl=64 time=2.330 ms\n\n--- 10.201.1.2 ping statistics ---\n3 packets transmitted, 3 packets received, 0% packet loss\nround-trip min/avg/max = 2.310/2.644/3.293 ms\nWIREGUARD_HANDSHAKE_AND_ENCRYPTED_PING_PASS"
+  },
+  {
+    "name": "SQM service installs CAKE on isolated veth",
+    "passed": true,
+    "seconds": 4.9,
+    "evidence": "Command failed: Not found\nSQM: Starting SQM script: piece_of_cake.qos on qa-sqm, in: 10000 Kbps, out: 10000 Kbps\nSQM: piece_of_cake.qos was started on qa-sqm successfully\nqdisc cake 8009: root refcnt 3 bandwidth 10Mbit besteffort triple-isolate nat nowash no-ack-filter split-gso rtt 100ms raw overhead 0"
+  },
+  {
+    "name": "backup archive contains committed configuration",
+    "passed": true,
+    "seconds": 11.77,
+    "evidence": "Thu Nov  5 05:31:34 GMT 2026 upgrade: Saving config files...\netc/config/network"
+  },
+  {
+    "name": "LED daemon recovers after restart and publishes validated JSON",
+    "passed": true,
+    "seconds": 1.75,
+    "evidence": "status daemon healthy"
+  },
+  {
+    "name": "no retired hotfix RPC object is registered",
+    "passed": true,
+    "seconds": 0.13,
+    "evidence": ""
+  },
+  {
+    "name": "all UCI configuration files parse",
+    "passed": true,
+    "seconds": 0.4,
+    "evidence": ""
+  },
+  {
+    "name": "rc list without running checks responds",
+    "passed": true,
+    "seconds": 0.54,
+    "evidence": ""
+  }
+]

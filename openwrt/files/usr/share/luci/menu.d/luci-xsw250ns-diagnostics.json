@@ -1,0 +1,8 @@
+{
+  "admin/system/xsw250ns-diagnostics": {
+    "title": "Chẩn đoán hệ thống",
+    "order": 95,
+    "action": { "type": "view", "path": "system/xsw250ns-diagnostics" },
+    "depends": { "acl": ["luci-xsw250ns-diagnostics"] }
+  }
+}

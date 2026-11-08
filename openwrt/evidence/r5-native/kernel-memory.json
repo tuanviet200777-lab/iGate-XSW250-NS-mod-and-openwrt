@@ -1,0 +1,72 @@
+[
+  {
+    "image": "immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-initramfs-recovery.itb",
+    "image_file_uncompressed_bytes": 37875720,
+    "arm64_image_size": 38273024,
+    "load": "0x80200000",
+    "end": "0x82680000",
+    "flags": "0xa",
+    "reserved": [
+      {
+        "node": "/reserved-memory/atf@80000000",
+        "start": "0x80000000",
+        "end": "0x80200000",
+        "overlaps_kernel": false
+      },
+      {
+        "node": "/reserved-memory/npu-binary@84000000",
+        "start": "0x84000000",
+        "end": "0x84a00000",
+        "overlaps_kernel": false
+      },
+      {
+        "node": "/reserved-memory/qdma0-buf@87000000",
+        "start": "0x87000000",
+        "end": "0x89000000",
+        "overlaps_kernel": false
+      },
+      {
+        "node": "/reserved-memory/qdma1-buf@89000000",
+        "start": "0x89000000",
+        "end": "0x8a000000",
+        "overlaps_kernel": false
+      }
+    ],
+    "reserved_memory_overlap": false
+  },
+  {
+    "image": "immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb",
+    "image_file_uncompressed_bytes": 13692936,
+    "arm64_image_size": 14090240,
+    "load": "0x80200000",
+    "end": "0x80f70000",
+    "flags": "0xa",
+    "reserved": [
+      {
+        "node": "/reserved-memory/atf@80000000",
+        "start": "0x80000000",
+        "end": "0x80200000",
+        "overlaps_kernel": false
+      },
+      {
+        "node": "/reserved-memory/npu-binary@84000000",
+        "start": "0x84000000",
+        "end": "0x84a00000",
+        "overlaps_kernel": false
+      },
+      {
+        "node": "/reserved-memory/qdma0-buf@87000000",
+        "start": "0x87000000",
+        "end": "0x89000000",
+        "overlaps_kernel": false
+      },
+      {
+        "node": "/reserved-memory/qdma1-buf@89000000",
+        "start": "0x89000000",
+        "end": "0x8a000000",
+        "overlaps_kernel": false
+      }
+    ],
+    "reserved_memory_overlap": false
+  }
+]

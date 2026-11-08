@@ -1,0 +1,7 @@
+config samba
+	option workgroup 'WORKGROUP'
+	option charset 'UTF-8'
+	option description 'XSW250NS USB NAS'
+	option interface 'lan'
+	option disable_netbios '1'
+	option allow_legacy_protocols '0'
