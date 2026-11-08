@@ -73,7 +73,7 @@ static int fs_read(const char *path,phys_addr_t addr,loff_t offset,loff_t len,lo
 {
 	int i=file_index(path);FILE *f;
 	if(strstr(path,"XSW250NS-DUMP/READY.TXT")){
-		const char *marker="XSW250NS-RAW-BACKUP-V1\\n";
+		const char *marker="XSW250NS-RAW-BACKUP-V1\n";
 		assert(offset==0 && len==(loff_t)strlen(marker));
 		memcpy((void *)addr,marker,len);*actual=len;return 0;
 	}
