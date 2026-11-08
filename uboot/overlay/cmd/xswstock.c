@@ -306,10 +306,10 @@ static int backup_usb(struct mtd_info *mtd)
 			}
 			if (fs_set_blk_dev("usb", device, FS_TYPE_FAT) ||
 			    fs_write(path, buffer, done, chunk, &actual) ||
-			    actual != chunk ||
+			    actual != (loff_t)chunk ||
 			    fs_set_blk_dev("usb", device, FS_TYPE_FAT) ||
 			    fs_read(path, buffer + SZ_128K, done, chunk, &actual) ||
-			    actual != chunk ||
+			    actual != (loff_t)chunk ||
 			    memcmp(map_sysmem(buffer, chunk),
 				   map_sysmem(buffer + SZ_128K, chunk), chunk)) {
 				printf("STOP: USB write/readback mismatch: %s +0x%zx\n",
