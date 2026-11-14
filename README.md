@@ -10,6 +10,7 @@
 > [!NOTE]
 > Repo OpenWrt này được fork/phát triển dựa trên dự án:
 > **[voz188/openwrt-xsw050ns](https://github.com/voz188/openwrt-xsw050ns)**.
+> Đã có bản thử nghiệm Pon driver cần tìm người test.(pre)
 
 > [!WARNING]
 > Các thao tác với UART, U-Boot, NAND/MTD và firmware đều có nguy cơ làm thiết bị không khởi động được nếu thực hiện sai.
