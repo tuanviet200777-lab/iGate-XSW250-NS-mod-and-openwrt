@@ -1,0 +1,57 @@
+diff --git a/net/samba4/files/samba.config b/net/samba4/files/samba.config
+--- a/net/samba4/files/samba.config
++++ b/net/samba4/files/samba.config
+@@ -1,24 +1,7 @@
+-
+ config samba
+ 	option workgroup 'WORKGROUP'
+ 	option charset 'UTF-8'
+-	option description 'Samba on OpenWRT'
+-	#option enable_extra_tuning '0'
+-
+-## example share
+-#config sambashare
+-	#option guest_only 'yes'
+-	#option create_mask '0666'
+-	#option dir_mask '0777'
+-	#option force_root '1'
+-	#option name 'share'
+-	#option inherit_owner 'yes'
+-	#option guest_ok 'yes'
+-	#option read_only 'no'
+-	#option path '/mnt/tmp'
+-
+-## reduce process priority via nice
+-#config procd 'extra'
+-	#option samba_nice '3'
+-## on mvebu platform we need negative values!
+-	#option samba_nice '-10'
++	option description 'XSW250NS USB NAS'
++	option interface 'lan'
++	option disable_netbios '1'
++	option allow_legacy_protocols '0'
+diff --git a/net/samba4/files/smb.conf.template b/net/samba4/files/smb.conf.template
+--- a/net/samba4/files/smb.conf.template
++++ b/net/samba4/files/smb.conf.template
+@@ -1,4 +1,8 @@
+ [global]
++	server min protocol = SMB2_10
++	server max protocol = SMB3_11
++	ntlm auth = ntlmv2-only
++	wide links = no
+ 	netbios name = |NAME| 
+ 	interfaces = |INTERFACES|
+ 	server string = |DESCRIPTION|
+@@ -33,10 +37,10 @@
+ 	invalid users = root
+ 
+ 	## map unknow users to guest
+-	map to guest = Bad User
++	map to guest = Never
+ 
+ 	## allow client access to accounts that have null passwords. 
+-	null passwords = yes
++	null passwords = no
+ 
+ 	## The old plaintext passdb backend. Some Samba features will not work if this passdb backend is used. (NOTE: enabled for size reasons)
+ 	## (tdbsam,smbpasswd,ldapsam)

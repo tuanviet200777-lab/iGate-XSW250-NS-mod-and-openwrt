@@ -1,0 +1,95 @@
+{
+  "board": "vnpt,xsw250ns-ubi",
+  "backup_archive_sha256": "118187a7e62366622bc3d1faa3f8e593feef892921b280a760e5342847336269",
+  "files": [
+    {
+      "file": "mtd0-bootloader.bin",
+      "bytes": 524288,
+      "offset": 0,
+      "sha256": "8ceb7b0f25bf97c66468bb7e4e1cb2b5189ba49e5f1d39980a1f782870c41e24"
+    },
+    {
+      "file": "mtd1-romfile.bin",
+      "bytes": 262144,
+      "offset": 524288,
+      "sha256": "f82a39ff206568e30d35b0af2ca00a60cae88d7f843e5b1bb5acad082086d23a"
+    },
+    {
+      "file": "mtd2-kernel.bin",
+      "bytes": 3594436,
+      "offset": 786432,
+      "sha256": "a9ff75f769d526495a4c3fe81044ef809347fcba932eb7831ea83a860503f737"
+    },
+    {
+      "file": "mtd3-rootfs.bin",
+      "bytes": 21823488,
+      "offset": 4381116,
+      "sha256": "a3ae970a8a1517e5a5eadf140af61bb19adb42622e495b33077463d7388e71cb"
+    },
+    {
+      "file": "mtd4-tclinux.bin",
+      "bytes": 36700160,
+      "offset": 786432,
+      "sha256": "96c6193462649a2f81d679437d884a12d9b59a6c50d94db5dde48c8fe116434d"
+    },
+    {
+      "file": "mtd5-kernel_slave.bin",
+      "bytes": 3593993,
+      "offset": 37486592,
+      "sha256": "724782c21afad547a74736d0721f16256ff11cf3e39e900875289dc30c86bd68"
+    },
+    {
+      "file": "mtd6-rootfs_slave.bin",
+      "bytes": 21954560,
+      "offset": 41080836,
+      "sha256": "0a10596372e2d78b6eba131e03c9e86baf543dcd5b20abdf2be1990a823b5c05"
+    },
+    {
+      "file": "mtd7-tclinux_slave.bin",
+      "bytes": 36700160,
+      "offset": 37486592,
+      "sha256": "7c2d2b618fdf4fb9b96c728ad86a39da82408b77918dc3eefa02a5bb06c77814"
+    },
+    {
+      "file": "mtd8-config.bin",
+      "bytes": 1048576,
+      "offset": 74186752,
+      "sha256": "f5fb04aa5b882706b9309e885f19477261336ef76a150c3b4d3489dfac3953ec"
+    },
+    {
+      "file": "mtd9-userdata.bin",
+      "bytes": 10485760,
+      "offset": 75235328,
+      "sha256": "de43501505821321c5276fe7691837c4e0cd4125cb919fa8c4a48d195595199c"
+    },
+    {
+      "file": "mtd10-safedata.bin",
+      "bytes": 10485760,
+      "offset": 85721088,
+      "sha256": "d78de5886da9f35ab5383bfc22552a0b4b178c515add04fe083a45a4019bd6c0"
+    },
+    {
+      "file": "mtd11-reservearea.bin",
+      "bytes": 2359296,
+      "offset": 232521728,
+      "sha256": "f4a8ce148387369df252544fe808bf413a42b96a456def9b881e64ae79fc0858"
+    }
+  ],
+  "live_eeprom_sha256": "c5a83b399335e1a35e763f0eba2ccce55a338395eae3f5bac3fa8397babc97cd",
+  "write_order": [
+    4,
+    7,
+    8,
+    9,
+    10,
+    11,
+    1,
+    0
+  ],
+  "write_geometry": {
+    "size": 268435456,
+    "erasesize": 131072,
+    "writesize": 2048
+  },
+  "policy": "all 12 validated before erase; overlapping subimages compared; no bad-block shifting; bootloader last; ECC data writes, no OOB"
+}

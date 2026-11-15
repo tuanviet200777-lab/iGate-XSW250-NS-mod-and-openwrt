@@ -1,0 +1,10 @@
+{
+  "luci-xsw250ns-status": {
+    "description": "XSW250NS LED status and temperature thresholds",
+    "read": {
+      "ubus": { "luci.xsw250ns-status": ["status"] },
+      "uci": ["xsw250ns_status"]
+    },
+    "write": { "uci": ["xsw250ns_status"] }
+  }
+}

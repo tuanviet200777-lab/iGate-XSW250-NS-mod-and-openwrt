@@ -1,0 +1,6 @@
+{
+  "readonly_acl": true,
+  "no_mutating_rpc_or_ai": true,
+  "frontend_syntax": true,
+  "full_patch_applies_to_pinned_base_files": true
+}

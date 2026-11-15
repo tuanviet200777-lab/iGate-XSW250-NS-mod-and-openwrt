@@ -1,0 +1,12 @@
+/build/
+/test-results/
+__pycache__/
+*.pyc
+*.itb
+*.ext4
+*.squashfs
+*.tar
+*.tar.gz
+*.key
+*.pem
+!public-keys/*.pem

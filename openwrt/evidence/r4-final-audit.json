@@ -1,0 +1,10 @@
+{
+  "tested_source_matches_actual_squashfs": true,
+  "retired_ui_rpc_worker_policy_absent": true,
+  "outbound_ai_endpoints_absent_from_all_regular_files": true,
+  "nand_hook_and_reader_preserved": true,
+  "legacy_cleanup_order_s00_verified": true,
+  "all_archive_paths_posix": true,
+  "native_build": false,
+  "hardware_boot_tested": false
+}

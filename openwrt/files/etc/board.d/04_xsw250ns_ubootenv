@@ -1,0 +1,32 @@
+# board_detect also runs before mount_root: /etc is SquashFS and read-only.
+# Discover the two environment volumes by name and write only to tmpfs here.
+# /etc/fw_env.config is an image-provided symlink to this runtime reader.
+. /lib/functions.sh
+
+[ "$(board_name)" = 'vnpt,xsw250ns-ubi' ] || exit 0
+
+. /lib/upgrade/nand.sh
+
+envubi="$(nand_find_ubi ubi)" || exit 1
+case "$envubi" in ubi[0-9]*) ;; *) exit 1 ;; esac
+case "${envubi#ubi}" in ''|*[!0-9]*) exit 1 ;; esac
+
+env1="$(nand_find_volume "$envubi" ubootenv)" || exit 1
+env2="$(nand_find_volume "$envubi" ubootenv2)" || exit 1
+for envvol in "$env1" "$env2"; do
+	case "$envvol" in "$envubi"_[0-9]*) ;; *) exit 1 ;; esac
+	case "${envvol#"$envubi"_}" in ''|*[!0-9]*) exit 1 ;; esac
+	[ -c "/dev/$envvol" ] || exit 1
+	# The supplied U-Boot uses one 0x1f000-byte LEB per environment copy.
+	[ "$(cat "/sys/class/ubi/$envvol/usable_eb_size")" = '126976' ] || exit 1
+done
+[ "$env1" != "$env2" ] || exit 1
+
+(
+	umask 077
+	envtmp="$(mktemp /tmp/xsw250ns-fw_env.config.XXXXXX)" || exit 1
+	trap 'rm -f "$envtmp"' EXIT
+	printf '/dev/%s 0x0 0x1f000 0x1f000 1\n' "$env1" "$env2" > "$envtmp" || exit 1
+	chmod 600 "$envtmp" || exit 1
+	mv -f "$envtmp" /tmp/xsw250ns-fw_env.config || exit 1
+)

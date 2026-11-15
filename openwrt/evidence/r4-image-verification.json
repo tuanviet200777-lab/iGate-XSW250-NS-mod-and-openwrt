@@ -1,0 +1,36 @@
+{
+  "bytes": 16003350,
+  "sha256": "4701967c1cb9012d62ea57a5e620278e5aa621a15594acb96093da74c6f00757",
+  "kernel_and_dtb_byte_identical": true,
+  "fwtool_metadata_preserved": true,
+  "fit_hashes_and_trailer_verified": true,
+  "build": "xsw250ns-20261104-r4-diag-nand1",
+  "base_sysupgrade_sha256": "5c0a9cc947a4cbbb176e74d0f1694b6718662ebe3e87a7dbe1ddf2b0ca830b77",
+  "unchanged_paths_and_metadata": 1621,
+  "removed_paths": [
+    "etc/init.d/xsw250ns-hotfix",
+    "etc/rc.d/S18xsw250ns-hotfix",
+    "etc/uci-defaults/98-xsw250ns-hotfix",
+    "usr/libexec/xsw250ns-hotfix",
+    "usr/share/luci/menu.d/luci-xsw250ns-hotfix.json",
+    "usr/share/rpcd/acl.d/luci-xsw250ns-hotfix.json",
+    "usr/share/rpcd/ucode/luci.xsw250ns-hotfix",
+    "usr/share/ucode/xsw250ns/hotfix.uc",
+    "usr/share/ucode/xsw250ns/policy.uc",
+    "www/luci-static/resources/view/system/xsw250ns-hotfix.js"
+  ],
+  "changed_or_added_paths": [
+    "etc/init.d/xsw250ns-retire-legacy",
+    "etc/rc.d/S00xsw250ns-retire-legacy",
+    "etc/uci-defaults/98-xsw250ns-diagnostics",
+    "etc/xsw250ns-build-id",
+    "usr/share/luci/menu.d/luci-xsw250ns-diagnostics.json",
+    "usr/share/rpcd/acl.d/luci-xsw250ns-diagnostics.json",
+    "usr/share/rpcd/ucode/luci.xsw250ns-diagnostics",
+    "usr/share/ucode/xsw250ns/diagnostics.uc",
+    "www/luci-static/resources/view/system/xsw250ns-diagnostics.js"
+  ],
+  "root_metadata_devices_and_hardlinks_preserved": true,
+  "native_build": false,
+  "hardware_boot_tested": false
+}

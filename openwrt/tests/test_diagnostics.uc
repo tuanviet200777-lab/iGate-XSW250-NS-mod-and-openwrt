@@ -1,0 +1,58 @@
+'use strict';
+import { assess, redact, collect, validMac, readerPatternValid } from 'xsw250ns.diagnostics';
+const tests = [];
+function check(name, passed) {
+	push(tests, { name, passed: !!passed });
+	if (!passed) die('FAIL: ' + name);
+}
+function has(rows, title) { return length(filter(rows, row => row.title == title)) > 0; }
+const low = assess('system', { info: { memory: { available: 4, total: 100 } }, cpu_frequency: [{}] });
+check('low available RAM flagged', has(low, 'RAM khả dụng thấp'));
+check('unknown RAM not flagged', !has(assess('system', {}), 'RAM khả dụng thấp'));
+check('healthy RAM not falsely flagged', !has(assess('system', {info:{memory:{available:35,total:100}}}), 'RAM khả dụng thấp'));
+check('temperature warning uses actual sensor', has(assess('system', { thermal: [{zone:'test',temperature_millic:96000}] }), 'Nhiệt độ cao'));
+check('unknown temperature not flagged', !has(assess('system', { thermal: [{zone:'test',temperature_millic:null}] }), 'Nhiệt độ cao'));
+const mounted = assess('storage', { mounts: '/dev/fit0 /rom squashfs ro,relatime 0 0\nubi0:rootfs_data /overlay ubifs rw,noatime 0 0\n', runtime_reader_valid: true, ubi_devices:[{device:'ubi0',avail_eraseblocks:0,bad_peb_count:0}] });
+check('read-only SquashFS normal', has(mounted, 'SquashFS chỉ đọc là bình thường'));
+check('UBIFS writable detected', has(mounted, 'Overlay UBIFS đã mount đọc/ghi'));
+check('zero available PEB is informational', length(filter(mounted, x => x.title == 'UBI đã phân bổ hết PEB khả dụng' && x.level == 'info')) == 1);
+check('recovery without overlay not falsely writable', !has(assess('storage', { mounts:'rootfs / rootfs rw 0 0' }), 'Overlay UBIFS đã mount đọc/ghi'));
+check('corrupted volume flagged', has(assess('storage', {ubi_volumes:[{volume:'ubi0_2',corrupted:1}]}), 'Volume cần kiểm tra'));
+check('bad PEB is not proof of physical failure', index(assess('storage', {ubi_devices:[{device:'ubi0',bad_peb_count:2}]})[length(assess('storage', {ubi_devices:[{device:'ubi0',bad_peb_count:2}]}))-1].advice, 'nhà máy') >= 0);
+const random = assess('ports', {devices:[{name:'eth0',present:true,address_assignment_type:1}]});
+check('hardware random MAC flagged', has(random, 'Ethernet đang dùng MAC ngẫu nhiên'));
+check('bridge random MAC not misdiagnosed as factory failure', !has(assess('ports', {devices:[{name:'br-lan',present:true,address_assignment_type:1}]}), 'Ethernet đang dùng MAC ngẫu nhiên'));
+check('software assigned MAC not called random', !has(assess('ports', {devices:[{name:'eth0',present:true,address_assignment_type:3}]}), 'Ethernet đang dùng MAC ngẫu nhiên'));
+check('disconnected port not called faulty PHY', has(assess('ports', {devices:[{name:'lan2p5',present:true,carrier:0}]}), 'Cổng 2.5G chưa có carrier'));
+check('radio retry failure flagged', has(assess('wireless', {status_available:true,radios:[{name:'radio0',retry_setup_failed:true}]}), 'Radio khởi tạo thất bại'));
+check('conntrack pressure flagged', has(assess('services', {status_available:true,connection_tracking:{count:95,maximum:100}}), 'Bảng conntrack gần đầy'));
+check('normal conntrack not flagged', !has(assess('services', {status_available:true,connection_tracking:{count:20,maximum:100}}), 'Bảng conntrack gần đầy'));
+check('missing conntrack is unknown', !has(assess('services', {status_available:true,connection_tracking:{count:null,maximum:100}}), 'Bảng conntrack gần đầy'));
+check('OOM event flagged', has(assess('logs', {kernel:{text:'[10] Out of memory: killed process'}}), 'Log có sự kiện hệ thống nghiêm trọng'));
+check('kernel bootargs removed completely', redact('safe\nKernel command line: password=example\nnext', []) == 'safe\nnext');
+check('known UCI secrets masked', index(redact('arbitrary alpha-secret text', ['alpha-secret']), 'alpha-secret') < 0);
+check('password line masked', index(redact('password=example-password', []), 'example-password') < 0);
+check('quoted password masked', index(redact('"password": "example-password"', []), 'example-password') < 0);
+check('token pattern masked', index(redact('github_' + 'pat_' + 'example123456789', []), 'example123456789') < 0);
+check('private key removed', index(redact('-----BEGIN ' + 'PRIVATE KEY-----\nEXAMPLEKEY\n-----END PRIVATE KEY-----', []), 'EXAMPLEKEY') < 0);
+check('short secret masked', redact('zz', ['zz']) == '[HIDDEN]');
+check('URL credentials masked', index(redact('https://alice:example-pass@host/path', []), 'example-pass') < 0);
+check('encoded URL credentials masked', index(redact('smb://alice:p%40ss@host/share', []), 'p%40ss') < 0);
+check('overlap masked', redact('abcdef abc', ['abc','abcdef']) == '[HIDDEN] [HIDDEN]');
+check('structural masking before short secret', index(redact('password=unknown-value', ['pass']), 'unknown-value') < 0);
+check('plain URL retained', redact('https://host/path', []) == 'https://host/path');
+check('diagnostic error text retained', index(redact('NVMEM read failed; UBIFS mounted', []), 'NVMEM read failed') >= 0);
+check('unicast MAC accepted', validMac('02:12:34:56:78:9a'));
+check('broadcast MAC rejected', !validMac('ff:ff:ff:ff:ff:ff'));
+check('zero MAC rejected', !validMac('00:00:00:00:00:00'));
+check('multicast MAC rejected', !validMac('01:12:34:56:78:9a'));
+check('malformed MAC rejected', !validMac('not-a-mac'));
+check('distinct redundant volumes accepted', readerPatternValid('/dev/ubi0_0 0x0 0x1f000 0x1f000 1\n/dev/ubi0_1 0x0 0x1f000 0x1f000 1\n'));
+check('same redundant volume rejected', !readerPatternValid('/dev/ubi0_0 0x0 0x1f000 0x1f000 1\n/dev/ubi0_0 0x0 0x1f000 0x1f000 1'));
+check('different UBI parents rejected', !readerPatternValid('/dev/ubi0_0 0x0 0x1f000 0x1f000 1\n/dev/ubi1_1 0x0 0x1f000 0x1f000 1'));
+check('failed ECC flagged without automatic writes', has(assess('storage', {mtd_statistics:[{device:'mtd1',ecc_failures:2}]}), 'MTD có bộ đếm ECC thất bại'));
+check('invalid environment MAC flagged', has(assess('storage', {environment_read_exit:0,environment_mac_valid:false,environment_mac:'ff:ff:ff:ff:ff:ff'}), 'MAC trong environment không hợp lệ'));
+let rejected = false;
+try { collect('ports; touch /tmp/injected'); } catch(e) { rejected = true; }
+check('unknown RPC group rejected before IO', rejected);
+printf('%.J\n', tests);

@@ -1,0 +1,12 @@
+'use strict';
+import { collect } from 'xsw250ns.diagnostics';
+
+return { 'luci.xsw250ns-diagnostics': {
+	collect: {
+		args: { group: '' },
+		call: request => {
+			try { return collect(request.args.group); }
+			catch (e) { return { error: 'Không thu thập được: ' + e }; }
+		}
+	}
+} };

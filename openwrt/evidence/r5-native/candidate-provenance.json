@@ -1,0 +1,16 @@
+{
+  "firmware_source_commit": "b2cb17d69347e95c57b28da71bda498b2cd9fef0",
+  "firmware_run": 41963638759,
+  "verifier_commit": "700c548f38773b233d18ce336439b6b2a85d5fa6",
+  "unchanged_native_images": [
+    {
+      "image": "immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb",
+      "sha256": "0342ae8dee7114de5683ae7e2237b7c0cc85133e23ea531fc8c3cb16dad31283"
+    },
+    {
+      "image": "immortalwrt-airoha-an7581-vnpt_xsw250ns-ubi-initramfs-recovery.itb",
+      "sha256": "f79c1068096358572818e653ba7b9e2b6532a2332dc22c248612ff19930819a1"
+    }
+  ],
+  "physical_router_or_usb_tested": false
+}

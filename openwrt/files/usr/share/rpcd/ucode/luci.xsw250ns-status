@@ -1,0 +1,6 @@
+'use strict';
+
+import { readStatus } from 'xsw250ns.state';
+
+// Only the validated runtime status is exposed; no caller-supplied path or command.
+return { 'luci.xsw250ns-status': { status: { call: () => ({ data: readStatus() ?? '' }) } } };

@@ -1,0 +1,47 @@
+{
+  "fip": "openwrt-airoha-an7581-vnpt_xsw250ns-ubi-usb-stock-bl31-uboot.fip",
+  "sha256": "14596df91783e5298adc38db75d80e730f31b863b0665c070926de1a5bb973cd",
+  "bytes": 342420,
+  "arm64_elf_entry": "0x81e00000",
+  "board": "vnpt,xsw250ns-ubi",
+  "ram_bytes": 536870912,
+  "usb_dtb": [
+    {
+      "mac": "0x1fab0000",
+      "phy": "0x1fac0000",
+      "usb2_only": true
+    },
+    {
+      "mac": "0x1fad0000",
+      "phy": "0x1fae0000",
+      "usb2_only": true
+    }
+  ],
+  "stock_file_metadata_verified_in_binary": 12,
+  "original_board_dt_nodes_preserved_exactly": 65,
+  "only_four_usb_nodes_added": true,
+  "numeric_clock_phy_reset_gpio_references_verified": 33,
+  "live_eeprom_hash_gate_present": true,
+  "retained_bl31_compressed_sha256": "9c16b893ec8a904ce0c1f287180267b0892933416d8f35040607ce56c0423a05",
+  "new_bl33_matches_compiled_uboot_bin": true,
+  "compiled_files": [
+    {
+      "name": "u-boot.bin",
+      "sha256": "40f8c829dc8431f1efce780d1b7e8c26f274f611e8ec27101f0e0825e22683e2"
+    },
+    {
+      "name": "u-boot.dtb",
+      "sha256": "21b03313756eb9b9d19742d36d387670e94238fd2701c923edbdb878c027e76f"
+    },
+    {
+      "name": "u-boot",
+      "sha256": "f4ae80a1ad2ff52d9a31471f16e8ab2733956fd8e87430e4af2871bdc25f7f6a"
+    },
+    {
+      "name": "resolved.config",
+      "sha256": "7348ffd5160545792e7d7e81f9f92b0e4b8a4e55fa379b5ea1e3d57501f41c0f"
+    }
+  ],
+  "physical_usb_boot_or_flash_tested": false,
+  "scope": "static artifact checks only; host command tests are separate"
+}

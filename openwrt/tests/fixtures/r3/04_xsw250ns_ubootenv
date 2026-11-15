@@ -1,0 +1,24 @@
+# Configure the UBI environment reader before 05_fw_defaults calls fw_loadenv.
+# This writes configuration in the running rootfs; it never writes flash/env.
+. /lib/functions.sh
+
+[ "$(board_name)" = "vnpt,xsw250ns-ubi" ] || exit 0
+[ -s /etc/fw_env.config ] && exit 0
+
+. /lib/uboot-envtools.sh
+. /lib/upgrade/nand.sh
+
+envubi="$(nand_find_ubi ubi)"
+[ -n "$envubi" ] || exit 0
+env1="$(nand_find_volume "$envubi" ubootenv)"
+env2="$(nand_find_volume "$envubi" ubootenv2)"
+[ -n "$env1" ] && [ -n "$env2" ] || exit 0
+[ -c "/dev/$env1" ] && [ -c "/dev/$env2" ] || exit 0
+
+if [ ! -s /etc/config/ubootenv ]; then
+	touch /etc/config/ubootenv
+	ubootenv_add_ubi_default
+fi
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config

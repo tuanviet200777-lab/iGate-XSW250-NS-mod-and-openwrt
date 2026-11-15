@@ -1,0 +1,24 @@
+'use strict';
+
+import * as fs from 'fs';
+import { cursor } from 'uci';
+
+// Read-only overview snapshots never contain passwords, PPP credentials or VPN keys.
+function snapshot() {
+	if (trim(fs.readfile('/tmp/sysinfo/board_name') ?? '') != 'vnpt,xsw250ns-ubi')
+		return { error: 'Unsupported board.' };
+	const u = cursor(), result = { network: {}, firewall: {} };
+	for (let config in ['network', 'firewall']) {
+		u.foreach(config, null, section => {
+			const row = { '.type': section['.type'], '.name': section['.name'] };
+			const allowed = config == 'network'
+				? ['name', 'type', 'device', 'proto', 'ifname', 'ports', 'vlan_filtering', 'disabled', 'auto', 'disabled_interfaces']
+				: ['name', 'network'];
+			for (let key in allowed) if (section[key] != null) row[key] = section[key];
+			result[config][section['.name']] = row;
+		});
+	}
+	return result;
+}
+
+return { 'luci.xsw250ns-port': { status: { call: snapshot } } };

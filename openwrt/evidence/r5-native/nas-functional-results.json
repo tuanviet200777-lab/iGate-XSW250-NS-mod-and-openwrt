@@ -1,0 +1,33 @@
+{
+  "scope": "actual native r5 SquashFS on QEMU virt kernel with fresh VM upper; Samba shares and test user created only in VM",
+  "build_id": "xsw250ns-20261104-r5-usb-nas",
+  "samba_version": "Version 4.24.5",
+  "vm_kernel": "6.18.55-qemu-virt",
+  "tests": [
+    {
+      "name": "authenticated encrypted SMB3 write/read matches on-disk SHA256",
+      "passed": true,
+      "bytes": 131072,
+      "sha256": "cd33e94f419eaf2bffbd7cee95ab105b86d19df3783e67ffb1655d0797e75bf9",
+      "dialect": "0x311",
+      "session_encrypted": true
+    },
+    {
+      "name": "read-only share permits read and rejects write with ACCESS_DENIED",
+      "passed": true
+    },
+    {
+      "name": "incorrect password is rejected",
+      "passed": true
+    },
+    {
+      "name": "SMB listeners bind to LAN rather than wildcard/WAN",
+      "passed": true,
+      "evidence": "tcp        0      0 10.44.1.1:445           0.0.0.0:*               LISTEN      5679/smbd"
+    }
+  ],
+  "physical_usb_or_router_tested": false,
+  "rootfs_sha256": "e63477007e307d865d21d391821354c3cfeacdb7be35fbc6eefca28da156ea1c",
+  "firmware_source_commit": "b2cb17d69347e95c57b28da71bda498b2cd9fef0",
+  "native_kernel_booted": false
+}

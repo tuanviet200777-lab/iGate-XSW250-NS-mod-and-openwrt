@@ -1,0 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0+
+/* The board DTS is the complete, decompiled supplied XSW250NS U-Boot tree.
+ * Override the automatic SoC -u-boot.dtsi fallback: its nodes are already in
+ * this tree and its source labels/macros are unavailable after decompilation.
+ */

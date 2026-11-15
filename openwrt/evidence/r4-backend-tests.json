@@ -1,0 +1,154 @@
+[
+  {
+    "name": "low available RAM flagged",
+    "passed": true
+  },
+  {
+    "name": "unknown RAM not flagged",
+    "passed": true
+  },
+  {
+    "name": "healthy RAM not falsely flagged",
+    "passed": true
+  },
+  {
+    "name": "temperature warning uses actual sensor",
+    "passed": true
+  },
+  {
+    "name": "unknown temperature not flagged",
+    "passed": true
+  },
+  {
+    "name": "read-only SquashFS normal",
+    "passed": true
+  },
+  {
+    "name": "UBIFS writable detected",
+    "passed": true
+  },
+  {
+    "name": "zero available PEB is informational",
+    "passed": true
+  },
+  {
+    "name": "recovery without overlay not falsely writable",
+    "passed": true
+  },
+  {
+    "name": "corrupted volume flagged",
+    "passed": true
+  },
+  {
+    "name": "bad PEB is not proof of physical failure",
+    "passed": true
+  },
+  {
+    "name": "hardware random MAC flagged",
+    "passed": true
+  },
+  {
+    "name": "bridge random MAC not misdiagnosed as factory failure",
+    "passed": true
+  },
+  {
+    "name": "software assigned MAC not called random",
+    "passed": true
+  },
+  {
+    "name": "disconnected port not called faulty PHY",
+    "passed": true
+  },
+  {
+    "name": "radio retry failure flagged",
+    "passed": true
+  },
+  {
+    "name": "conntrack pressure flagged",
+    "passed": true
+  },
+  {
+    "name": "normal conntrack not flagged",
+    "passed": true
+  },
+  {
+    "name": "missing conntrack is unknown",
+    "passed": true
+  },
+  {
+    "name": "OOM event flagged",
+    "passed": true
+  },
+  {
+    "name": "kernel bootargs removed completely",
+    "passed": true
+  },
+  {
+    "name": "known UCI secrets masked",
+    "passed": true
+  },
+  {
+    "name": "password line masked",
+    "passed": true
+  },
+  {
+    "name": "quoted password masked",
+    "passed": true
+  },
+  {
+    "name": "token pattern masked",
+    "passed": true
+  },
+  {
+    "name": "private key removed",
+    "passed": true
+  },
+  {
+    "name": "diagnostic error text retained",
+    "passed": true
+  },
+  {
+    "name": "unicast MAC accepted",
+    "passed": true
+  },
+  {
+    "name": "broadcast MAC rejected",
+    "passed": true
+  },
+  {
+    "name": "zero MAC rejected",
+    "passed": true
+  },
+  {
+    "name": "multicast MAC rejected",
+    "passed": true
+  },
+  {
+    "name": "malformed MAC rejected",
+    "passed": true
+  },
+  {
+    "name": "distinct redundant volumes accepted",
+    "passed": true
+  },
+  {
+    "name": "same redundant volume rejected",
+    "passed": true
+  },
+  {
+    "name": "different UBI parents rejected",
+    "passed": true
+  },
+  {
+    "name": "failed ECC flagged without automatic writes",
+    "passed": true
+  },
+  {
+    "name": "invalid environment MAC flagged",
+    "passed": true
+  },
+  {
+    "name": "unknown RPC group rejected before IO",
+    "passed": true
+  }
+]

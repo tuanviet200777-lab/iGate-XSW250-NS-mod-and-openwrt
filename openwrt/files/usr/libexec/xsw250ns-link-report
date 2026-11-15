@@ -1,0 +1,20 @@
+#!/bin/sh
+# Read-only diagnostics: no PHY writes, renegotiation or interface restarts.
+printf '=== build ===\n'
+cat /etc/xsw250ns-build-id
+date
+uptime
+printf '=== PHY and port ===\n'
+ethtool lan2p5
+ethtool -i lan2p5
+ethtool --show-eee lan2p5
+ethtool -S lan2p5
+ip -s link show dev lan2p5
+bridge link
+printf '=== recent link events ===\n'
+dmesg | grep -E 'lan2p5.*(Link is|PHY|configuring)|eth0.*Link is' | tail -n 60
+printf '=== resources and LED status ===\n'
+free
+cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null
+cat /var/run/xsw250ns/status.json 2>/dev/null
+exit 0

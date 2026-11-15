@@ -1,0 +1,9 @@
+{
+  "readonly_luci_login": true,
+  "collect_button_returned_six_groups": true,
+  "json_download_valid": true,
+  "json_collection_errors": 0,
+  "download_sha256": "1e94df0f6919745e8e040b836e00ab031dce04f775641c47532b17ce342e4369",
+  "platform": "QEMU virt ARM64, no real router",
+  "screenshot": "luci-desktop.png"
+}

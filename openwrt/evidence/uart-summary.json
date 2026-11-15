@@ -1,0 +1,10 @@
+{
+  "log_sha256": "dcb32013a09efe4183e4a3cb2cfe34fae769f163f7cd8d1baebe0661b2a85d6e",
+  "log_bytes": 116658,
+  "bootloader": "U-Boot 2026.07",
+  "r3_nand_boot_observed": true,
+  "nand_bad_pebs": 0,
+  "nand_corrupted_pebs": 0,
+  "ubifs_overlay_mount_observed": true,
+  "fixed_version_hardware_tested": false
+}

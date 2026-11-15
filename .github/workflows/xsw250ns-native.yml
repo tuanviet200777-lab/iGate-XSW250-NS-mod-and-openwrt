@@ -1,0 +1,98 @@
+name: XSW250NS native USB NAS firmware
+on:
+  push:
+    branches: [codex/xsw250ns-native-build]
+    paths: [openwrt/**, .github/workflows/xsw250ns-native.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: xsw250ns-native-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install official Ubuntu build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev python3 python3-setuptools rsync swig unzip zlib1g-dev file wget curl pkgconf squashfs-tools
+          df -h .
+          nproc
+          free -m
+      - name: Check FIT import, recovery layout and NAND shell fixtures
+        run: |
+          node openwrt/tests/test_portrole.js
+          python3 openwrt/tests/test_fit_import.py
+          python3 openwrt/tests/test_recovery_layout.py
+          python3 openwrt/tests/test_reader.py
+          python3 openwrt/tests/test_rom_checker.py
+      - name: Prepare pinned board, feeds and USB NAS profile
+        run: bash openwrt/scripts/prepare-build.sh "$RUNNER_TEMP/xsw250ns-build"
+      - name: Check resolved profile
+        run: |
+          python3 openwrt/scripts/check-native-profile.py "$RUNNER_TEMP/xsw250ns-build"
+          cp "$RUNNER_TEMP/xsw250ns-build/.config" "$RUNNER_TEMP/xsw250ns-resolved.config"
+      - name: Download verified upstream sources
+        working-directory: ${{ runner.temp }}/xsw250ns-build
+        run: make -j4 download
+      - name: Compile native firmware and matching kernel modules
+        working-directory: ${{ runner.temp }}/xsw250ns-build
+        run: |
+          set -o pipefail
+          build_jobs=$(nproc)
+          ram_jobs=$(awk '/MemAvailable:/ { print int($2 / 2097152) }' /proc/meminfo)
+          [ "$ram_jobs" -ge 1 ] || ram_jobs=1
+          [ "$build_jobs" -le 4 ] || build_jobs=4
+          [ "$build_jobs" -le "$ram_jobs" ] || build_jobs=$ram_jobs
+          echo "Native build jobs: $build_jobs"
+          make -j"$build_jobs" V=s 2>&1 | tee "$RUNNER_TEMP/xsw250ns-native-build.log"
+      - name: Preserve native candidate images before validation
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: xsw250ns-r5-candidate-${{ github.sha }}
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/xsw250ns-build/bin/targets/airoha/an7581/*xsw250ns*
+            ${{ runner.temp }}/xsw250ns-build/bin/targets/airoha/an7581/sha256sums
+            ${{ runner.temp }}/xsw250ns-build/bin/targets/airoha/an7581/profiles.json
+            ${{ runner.temp }}/xsw250ns-build/bin/targets/airoha/an7581/*.buildinfo
+            ${{ runner.temp }}/xsw250ns-build/bin/targets/airoha/an7581/packages/*.apk
+            ${{ runner.temp }}/xsw250ns-resolved.config
+      - name: Verify actual images and USB NAS contents
+        run: |
+          set -o pipefail
+          python3 openwrt/scripts/check-built-images.py "$RUNNER_TEMP/xsw250ns-build/bin/targets/airoha/an7581" "$RUNNER_TEMP/xsw250ns-verification" 2>&1 | tee "$RUNNER_TEMP/xsw250ns-native-verification.log"
+      - name: Package verified sysupgrade and recovery
+        run: python3 openwrt/scripts/package-firmware.py "$RUNNER_TEMP/xsw250ns-build/bin/targets/airoha/an7581" "$RUNNER_TEMP/xsw250ns-sysupgrade-recovery.zip"
+      - name: Upload two-image ZIP
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: xsw250ns-sysupgrade-recovery-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/xsw250ns-sysupgrade-recovery.zip
+            ${{ runner.temp }}/xsw250ns-sysupgrade-recovery.verification.json
+      - name: Preserve verification evidence and logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: xsw250ns-r5-evidence-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: ignore
+          path: |
+            ${{ runner.temp }}/xsw250ns-verification/*.json
+            ${{ runner.temp }}/xsw250ns-native-verification.log
+            ${{ github.workspace }}/openwrt/test-results/reader-tests.json
+            ${{ github.workspace }}/openwrt/test-results/rom-checker-results.json
+      - name: Preserve native compilation log
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: xsw250ns-native-build-log-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: ignore
+          path: ${{ runner.temp }}/xsw250ns-native-build.log

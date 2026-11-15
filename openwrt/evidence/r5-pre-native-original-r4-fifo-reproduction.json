@@ -1,0 +1,14 @@
+{
+  "attacker_uid": 65534,
+  "fifo_owner_uid": 65534,
+  "fifo_type": "fifo",
+  "default_symlink_regular_fifo_guards": [
+    "1",
+    "0",
+    "0"
+  ],
+  "diagnostic_rpc_blocked_until_client_timeout": true,
+  "blocked_seconds": 15.02,
+  "rpc_recovered_after_fifo_removal_and_restart": true,
+  "physical_router_accessed": false
+}

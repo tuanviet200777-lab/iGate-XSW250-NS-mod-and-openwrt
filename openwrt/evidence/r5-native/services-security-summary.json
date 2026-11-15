@@ -1,0 +1,16 @@
+{
+  "scope": "exact native r5 SquashFS read-only lower with fresh VM upper and separate QEMU kernel",
+  "rootfs_sha256": "e63477007e307d865d21d391821354c3cfeacdb7be35fbc6eefca28da156ea1c",
+  "services": {
+    "passed": 13,
+    "total": 13
+  },
+  "security": {
+    "passed": 31,
+    "total": 31
+  },
+  "fixture_accounts_and_sentinels_only": true,
+  "vm_only_board_name_override": "vnpt,xsw250ns-ubi",
+  "vm_only_led_mode": "off; runtime JSON tested, physical LEDs absent",
+  "native_kernel_or_physical_router_tested": false
+}

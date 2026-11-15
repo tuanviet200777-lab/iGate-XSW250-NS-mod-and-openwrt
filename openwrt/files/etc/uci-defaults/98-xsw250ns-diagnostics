@@ -1,0 +1,5 @@
+#!/bin/sh
+[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = 'vnpt,xsw250ns-ubi' ] || exit 0
+/etc/init.d/xsw250ns-retire-legacy enable
+/etc/init.d/xsw250ns-retire-legacy start
+exit 0
