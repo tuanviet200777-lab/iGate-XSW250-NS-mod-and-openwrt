@@ -15,22 +15,25 @@
 > Các thao tác với UART, U-Boot, NAND/MTD và firmware đều có nguy cơ làm thiết bị không khởi động được nếu thực hiện sai.
 > **Hãy backup firmware gốc trước khi chỉnh sửa hoặc flash bất kỳ thứ gì.**
 
-> Đã có bản thử nghiệm Pon driver cần tìm người test.(pre)
+> [!IMPORTANT]
+> Đã có bản thử nghiệm PON driver (`ponwrt`) — cần tìm người test trên hạ tầng XGS-PON (pre-release).
 
 ---
 
 ## 📚 Mục lục
 
 - [🔎 Tổng quan](#-tổng-quan)
-- [🧠 Main SoC](#-1-main-soc)
-- [💾 Bộ nhớ & lưu trữ](#-2-bộ-nhớ--lưu-trữ)
-- [📡 Wi-Fi 6](#-3-hệ-thống-wi-fi-6)
-- [🌐 Ethernet, VoIP & XGS-PON](#-4-ethernet-voip--xgs-pon)
+- [🧠 1. Main SoC](#-1-main-soc)
+- [💾 2. Bộ nhớ & lưu trữ](#-2-bộ-nhớ--lưu-trữ)
+- [📡 3. Hệ thống Wi-Fi 6](#-3-hệ-thống-wi-fi-6)
+- [🌐 4. Ethernet, VoIP & XGS-PON](#-4-ethernet-voip--xgs-pon)
 - [🧰 Công cụ thường dùng](#-công-cụ-thường-dùng)
 - [🔐 Lấy thông tin đăng nhập UART](#-lấy-thông-tin-đăng-nhập-uart)
 - [🛟 Backup firmware gốc](#-backup-firmware-gốc)
 - [📦 Tạo file `all_flash.bin`](#-tạo-file-all_flashbin)
-- [    Cài đặt theo cấu trúc U-Boot của OpenWrt](#-Cài-đặt-theo-cấu-trúc-U-Boot-của-OpenWrt)
+- [⚡ Cài đặt U-Boot của OpenWrt](#-cài-đặt-u-boot-của-openwrt)
+- [🛠️ Nạp firmware OpenWrt vào NAND](#️-nạp-firmware-openwrt-vào-nand)
+- [🌐 Cấu hình mạng: Bản chưa có PON vs. Bản có PON](#-cấu-hình-mạng-bản-chưa-có-pon-vs-bản-có-pon)
 - [🔗 Tài liệu tham khảo](#-tài-liệu-tham-khảo)
 - [💬 Hỗ trợ / thảo luận](#-hỗ-trợ--thảo-luận)
 
@@ -46,7 +49,7 @@
 | **Main SoC** | Airoha `AN7581CT` |
 | **RAM** | 512 MB DDR4 |
 | **NAND Flash** | 256 MB SLC NAND |
-| **Ethernet nổi bật** | 1 × 2.5GbE PHY + 4 x 1GbE qua switch nội SoC |
+| **Ethernet nổi bật** | 1 × 2.5GbE PHY + 4 × 1GbE qua switch nội SoC |
 | **VoIP** | 2 × FXS / RJ11 |
 
 > [!IMPORTANT]
@@ -66,7 +69,7 @@
 
 | Thành phần | Mã chip | Dung lượng / thông số | Hãng |
 |---|---|---|---|
-| **RAM hệ thống** | `W664GG6RB-06` | **512 MB (4 Gb) DDR4-2666**; 1333 MHz / 2666 MT/s, cấu trúc 256M × 16, 1.2 V. *khóa 3200 MHz* | Winbond |
+| **RAM hệ thống** | `W664GG6RB-06` | **512 MB (4 Gb) DDR4-2666**; 1333 MHz / 2666 MT/s, cấu trúc 256M × 16, 1.2 V (*khóa 3200 MHz*) | Winbond |
 | **NAND Flash** | `25N02KVZEIR` | **256 MB (2 Gb) Serial SLC NAND Flash**; SPI/QSPI 104 MHz, tích hợp ECC 8-bit | Winbond |
 
 ---
@@ -75,7 +78,7 @@
 
 **Wireless AX3000 — MediaTek Filogic 630**
 
-| Vai trò | Mã chip | Cấu trúc / thông số | Hãng |
+| Vai trò | Mã chip | Cấu trúc / chức năng | Hãng |
 |---|---|---|---|
 | **Wi-Fi 6 Baseband / MAC** | `MT7916AN` | MAC/BBP tích hợp 32-bit RISC MCU, PCIe, AX3000; 2×2 2.4 GHz + 3×3/2×2 5 GHz, hỗ trợ 160 MHz | MediaTek |
 | **Wi-Fi 6 RF Transceiver** | `MT7976DN` | RF Front-End dual-band; 2.4 GHz 2T2R + 5 GHz 3T3R, tích hợp iPA / iLNA | MediaTek |
@@ -95,13 +98,13 @@
 
 ## 🧰 Công cụ thường dùng
 
-- **Tera Term / terminal UART**
-- **Tftpd32**
+- **Tera Term / PuTTY / MobaXterm** (terminal UART)
+- **Tftpd32 / Tftpd64** (TFTP Server trên Windows)
 - **Python 3**
 - Tool `xgs_romfile.py`
 - Tool `an758x-stock2ubi`
 
-Cài thư viện cần thiết:
+Cài thư viện Python cần thiết:
 
 ```bash
 python -m pip install pycryptodome
@@ -135,21 +138,21 @@ Mở CMD/PowerShell tại thư mục chứa tool:
 python xgs_romfile.py keys --sn <XPON_SN> -o keys
 ```
 
-`<XPON_SN>` có thể xem trong giao diện debug hoặc trên tem của router.
+`<XPON_SN>` có thể xem trong giao diện debug hoặc trên tem dán dưới đáy router.
 
 ### Bước 4 — Xem kết quả
 
-Kiểm tra thư mục/file output `keys` do tool tạo ra.
+Kiểm tra thư mục/file output `keys` do tool tạo ra:
 
-- Username Linux theo README gốc: `admin`
-- Thông tin đăng nhập U-Boot: ` cat /proc/cmdline `
+- **Username Linux theo README gốc:** `admin`
+- **Thông tin đăng nhập U-Boot:** chạy lệnh `cat /proc/cmdline` trong shell Linux
 
 ---
 
 ## 🛟 Backup firmware gốc
 
 > [!IMPORTANT]
-> Đây là bước **rất nên thực hiện trước khi flash/mod firmware**.
+> Đây là bước **bắt buộc nên thực hiện trước khi flash/mod firmware**.
 
 ### 1. Đăng nhập Linux qua UART
 
@@ -161,54 +164,41 @@ cd /tmp
 
 ### 2. Tải `an758x-stock2ubi`
 
-Release được README gốc sử dụng:
+Release được sử dụng:
 
 👉 **[pbs05/an758x-stock2ubi v0.1.14](https://github.com/pbs05/an758x-stock2ubi/releases/tag/v0.1.14)**
 
 Upload binary vào `/tmp` trên router.
 
-### 3. Cấp quyền thực thi
+### 3. Cấp quyền thực thi và chạy tool
 
 ```sh
 chmod +x /tmp/an758x-stock2ubi
-```
-
-### 4. Chạy tool
-
-```sh
 /tmp/an758x-stock2ubi
 ```
 
-### 5. Mở giao diện backup
+### 4. Mở giao diện backup và tải toàn bộ phân vùng MTD
 
-Trên máy tính cùng mạng, mở:
+Trên máy tính cùng mạng LAN, mở trình duyệt truy cập:
 
 ```text
 http://192.168.1.1:3333/
 ```
 
-### 6. Tải các file backup về máy
+Tải toàn bộ các partition/MTD về máy tính và lưu ở nơi an toàn (đặc biệt là `romfile` và `reservearea` chứa dữ liệu hiệu chuẩn laser BOB + địa chỉ MAC).
 
-Lưu các partition/MTD cần thiết ở nơi an toàn trước khi tiếp tục chỉnh sửa firmware.
-
-Chú ý không được nhấn next sang trang sau để upload uboot và preloader
+> [!WARNING]
+> **Chú ý:** Không được nhấn *Next* sang trang sau để upload U-Boot và Preloader trên công cụ này.
 
 ---
 
-## 📦 Tạo file `all_flash.bin` 
+## 📦 Tạo file `all_flash.bin`
 
 Sau khi đã có các file `mtd*` backup:
 
 ### 1. Chuẩn bị thư mục
 
-Đặt các file MTD và script sau vào cùng một thư mục:
-
-```text
-mtd*.bin
-build_stock_all_flash.py
-```
-
-Ví dụ:
+Đặt các file MTD và script `build_stock_all_flash.py` vào cùng một thư mục:
 
 ```text
 backup/
@@ -229,56 +219,149 @@ Mở CMD/PowerShell tại thư mục trên và chạy:
 python build_stock_all_flash.py . -o all_flash.bin
 ```
 
-Nếu script hoàn tất mà không báo lỗi, file kết quả sẽ là:
-
-```text
-all_flash.bin
-```
+Nếu script hoàn tất mà không báo lỗi, file kết quả sẽ là `all_flash.bin`.
 
 > [!WARNING]
-> `all_flash.bin` chỉ nên được tạo từ **backup đúng của thiết bị/revision tương ứng**. Không nên flash file của máy khác khi chưa biết rõ partition layout, calibration data và dữ liệu riêng của thiết bị.
+> `all_flash.bin` chỉ nên được tạo từ **backup đúng của thiết bị/revision tương ứng**. Không flash file của máy khác khi chưa biết rõ partition layout, calibration data và dữ liệu riêng của thiết bị.
 
 ---
 
-## Cài đặt theo cấu trúc U-Boot của OpenWrt
+## ⚡ Cài đặt U-Boot của OpenWrt
 
-Đặt các file ảnh OpenWrt lên TFTP server (IP lAN PC: 192.168.1.254): 
+1. **Chuẩn bị TFTP Server:**
+   - Đặt IP tĩnh cho card mạng LAN của PC là **`192.168.1.254`** (Subnet mask `255.255.255.0`).
+   - Mở **Tftpd32 / Tftpd64** trỏ vào thư mục chứa các tệp khởi động sau:
+     ```text
+     openwrt-airoha-an7581-vnpt_xsw250ns-ubi-preloader.bin
+     openwrt-airoha-an7581-vnpt_xsw250ns-ubi-bl31-uboot.fip
+     openwrt-airoha-an7581-vnpt_xsw250ns-ubi-initramfs-recovery.itb
+     ```
 
-```text
-openwrt-airoha-an7581-vnpt_xsw-050ns-bl31-uboot.fip
-openwrt-airoha-an7581-vnpt_xsw-050ns-initramfs-recovery.itb
-openwrt-airoha-an7581-vnpt_xsw-050ns-preloader.bin
+2. **Nạp tạm BL2 Preloader & BL31+U-Boot qua XMODEM:**
+   - Kết nối cáp UART (3.3V TX/RX/GND) vào bo mạch và mở **Tera Term** ở tốc độ **`115200 8N1`**.
+   - **Nhấn giữ nút Reset** (nằm trong lỗ nhỏ trên vỏ máy) đồng thời cắm nguồn cho router để vào chế độ recovery UART.
+   - Nhấn phím **`x`** trong cửa sổ terminal, sau đó chọn **File → Transfer → XMODEM → Send** và gửi tệp:
+     ```text
+     openwrt-airoha-an7581-vnpt_xsw250ns-ubi-preloader.bin
+     ```
+   - Chờ truyền xong, khi thấy dòng nhắc `Press x to load BL31 + U-Boot FIP` xuất hiện, nhấn tiếp phím **`x`** và gửi qua **XMODEM** tệp:
+     ```text
+     openwrt-airoha-an7581-vnpt_xsw250ns-ubi-bl31-uboot.fip
+     ```
+
+3. **Ghi vĩnh viễn U-Boot và Preloader vào NAND:**
+   - Sau khi thiết bị boot vào giao diện menu U-Boot của OpenWrt, dùng phím mũi tên xuống chọn lần lượt:
+     - Mục **`5. Load BL31+U-Boot FIP via TFTP then write to flash`** (nhập tên file `openwrt-airoha-an7581-vnpt_xsw250ns-ubi-bl31-uboot.fip`).
+     - Mục **`6. Load BL2 preloader via TFTP then write to flash`** (nhập tên file `openwrt-airoha-an7581-vnpt_xsw250ns-ubi-preloader.bin`).
+   - Khởi động lại router để kiểm tra đã lên thẳng U-Boot của OpenWrt.
+
+---
+
+## 🛠️ Nạp firmware OpenWrt vào NAND
+
+Sau khi đã cài đặt xong U-Boot của OpenWrt ở bước trên, bạn chọn tải bộ 2 tệp firmware tương ứng với nhu cầu sử dụng từ mục **Releases**:
+- **Bản ổn định (chưa có PON):** Dùng làm router chính / AP / Bridge qua cổng mạng RJ45.
+- **Bản thử nghiệm có PON (`ponwrt`):** Tích hợp driver quang XGS-PON để cắm trực tiếp dây nhảy quang vào thiết bị.
+
+### 1. Khởi động bản Initramfs Recovery qua TFTP
+
+Đặt tệp `*-initramfs-recovery.itb` vào thư mục TFTP Server (`192.168.1.254`). Trong menu U-Boot (hoặc U-Boot console), tải ảnh recovery vào RAM và boot:
+
+```bash
+setenv ipaddr 192.168.1.1
+setenv serverip 192.168.1.254
+tftpboot 0x46000000 openwrt-airoha-an7581-vnpt_xsw250ns-ubi-initramfs-recovery.itb
+bootm 0x46000000
 ```
 
-Kết nối cổng serial console và mở Tera Term trên Windows, thiết lập tốc độ 115200 baud
+Đợi khoảng 30–60 giây để OpenWrt khởi động tạm thời trên RAM.
 
-Giữ (hold) nút Reset (nằm trong lỗ nhỏ trên vỏ máy) và cắm nguồn để vào chế độ recovery
+### 2. Flash vĩnh viễn vào bộ nhớ NAND (`sysupgrade`)
 
-Nhấn phím x trong terminal, sau đó vào File → Transfer → XMODEM → Send
+1. Dùng SCP / WinSCP chép tệp `*-squashfs-sysupgrade.itb` từ máy tính vào thư mục `/tmp/` của router (IP `192.168.1.1`, user `root`, không mật khẩu):
+   ```bash
+   scp openwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb root@192.168.1.1:/tmp/
+   ```
+2. Trong cửa sổ terminal (UART hoặc SSH), chạy lệnh nâng cấp hệ thống:
+   ```sh
+   sysupgrade -n /tmp/openwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb
+   ```
+3. Chờ khoảng 1–2 phút để router ghi phân vùng UBI vào NAND và tự khởi động lại.
 
-Chọn file BL2
+---
 
-```text
-openwrt-airoha-an7581-vnpt_xsw-250ns-preloader.bin
+## 🌐 Cấu hình mạng: Bản chưa có PON vs. Bản có PON
+
+### Trường hợp 1: Cài bản CHƯA CÓ PON (Dùng làm Router chính qua cổng 2.5GbE)
+
+Phù hợp khi đường truyền của bạn đang chạy hạ tầng **GPON** (bước sóng 1490/1310 nm — không tương thích vật lý với mắt quang XGS-PON 1577/1270 nm trên XSW250-NS) hoặc khi bạn muốn dùng một modem nhà mạng riêng ở chế độ Bridge.
+
+- **Sơ đồ cổng mặc định:**
+  - **Cổng WAN (`lan2p5`):** Cổng **2.5GbE** — cắm dây mạng từ modem Bridge của nhà mạng vào cổng này.
+  - **Cổng LAN (`lan1` – `lan4`):** 4 cổng **1GbE** + Wi-Fi 6 (`MT7916AN`).
+- **Các bước cấu hình quay số PPPoE:**
+  1. Truy cập giao diện web LuCI tại **`http://192.168.1.1`**.
+  2. Vào **Network → Interfaces** → bấm **Edit** ở giao diện **`wan`** (đang gắn với thiết bị `lan2p5`).
+  3. Đổi **Protocol** sang **PPPoE**, nhập **PAP/CHAP username** và **password** của đường truyền Internet → bấm **Save & Apply**.
+  4. *(Tùy chọn)* Nếu muốn chuyển cổng 2.5GbE sang làm cổng LAN tốc độ cao cho mạng nội bộ, vào **Network → Interfaces → Devices → `br-lan` → Configure**, thêm `lan2p5` vào danh sách Bridge ports và chuyển giao diện `wan` sang một trong các cổng `lan1`–`lan4`.
+
+---
+
+### Trường hợp 2: Cài bản CÓ PON (Cắm trực tiếp sợi quang XGS-PON)
+
+> [!NOTE]
+> Áp dụng cho bản build thử nghiệm (`ponwrt`, kernel 6.18) tích hợp bộ driver quang mã nguồn mở (`airoha-xpon`, `airoha-en7572`, `airoha-pon-frontend`), công cụ **`ponctl`** và giao diện **`luci-app-pon`**. Chỉ hoạt động trên hạ tầng **XGS-PON**.
+
+#### 1. Chuẩn bị 3 thông số định danh ONU
+
+| Thông số | Cách lấy |
+|---|---|
+| **SN (Serial Number)** | In trên tem mặt đáy router (dạng 16 ký tự hex, VD: `4152435XXXXXXXXX` hoặc dạng `ARCBXXXXXXXX`) |
+| **Registration ID** | Thường giống SN hoặc để trống (tùy tổng đài OLT từng khu vực) |
+| **Mode PON** | `xgspon` |
+
+#### 2. Khai báo thông số PON qua SSH (`ponctl`)
+
+Kết nối SSH vào router (`ssh root@192.168.1.1`) và chạy lần lượt các lệnh sau:
+
+```sh
+# 1. Đặt chế độ XGS-PON (các mode hỗ trợ: xgspon, xgpon, epon-1g, epon-10g-1g, epon-10g-10g)
+ponctl mode set xgspon
+
+# 2. Khai báo Serial Number của thiết bị (16 hex digits hoặc VEND + 8 hex)
+ponctl identity set --serial 4152435XXXXXXXXX
+
+# (Tùy chọn) Nếu ISP yêu cầu Registration ID
+ponctl identity set --registration-id 4152435XXXXXXXXX
 ```
 
-Chờ đến khi file được truyền xong và thấy dòng nhắc sau xuất hiện
+*(Hoặc bạn có thể cấu hình trực quan trên giao diện web tại **LuCI → Network → PON**)*.
 
-```text
-Press x to load BL31 + U-Boot FIP
-```
+#### 3. Kiểm tra trạng thái đồng bộ quang (O-State) & quay số WAN
 
-Nhấn phím x trong terminal, sau đó vào File → Transfer → XMODEM → Send
+1. Cắm sợi quang vào cổng PON của router và kiểm tra trạng thái:
+   ```sh
+   ponctl status
+   ```
+   - `active_mode`: hiển thị `xgspon`.
+   - `serial_configured`: hiển thị `true`.
+   - **O-State:** Hiển thị **`O5`** nghĩa là module quang đã đăng ký và đồng bộ thành công với tổng đài OLT.
+2. **Tạo kết nối Internet trên giao diện quang (`pon0`):**
+   - Vào **LuCI → Network → Interfaces** → tạo mới (hoặc sửa) giao diện **`wan`** gắn với thiết bị **`pon0`** (hoặc `pon0.<VLAN_ID>` theo VLAN Internet của nhà mạng, ví dụ `pon0.35` hoặc `pon0.11`).
+   - Chọn **Protocol** là **PPPoE** (hoặc DHCP tùy gói cước), nhập tài khoản PPPoE → bấm **Save & Apply**.
 
-```text
-openwrt-airoha-an7581-vnpt_xsw-250ns-bl31-uboot.fip
-```
+#### 4. Gỡ rối nhanh & Lưu ý dữ liệu hiệu chuẩn (Factory Data)
 
-Sau khi vào uboot nhấn nhanh nút xuống chọn mục `5. Load BL31+U-Boot FIP via TFTP then write to ` 
+| Triệu chứng | Nguyên nhân & Cách xử lý |
+|---|---|
+| `ponctl: no pon device` | Driver `airoha-xpon` chưa load: kiểm tra `dmesg \| grep -i xpon` và `ls /sys/class/pon/` |
+| `serial_configured=false` | Chưa khai báo SN → chạy `ponctl identity set --serial <SN>` |
+| O-state dừng ở `O2` / `O3` / `O4` | Sai mã SN, sai mode PON, suy hao quang lớn hoặc tuyến cáp khu vực đó chưa nâng cấp lên XGS-PON |
+| Lên `O5` nhưng không có mạng | Kiểm tra lại VLAN ID gắn trên thiết bị `pon0` (ví dụ `pon0.35`) và thông số PPPoE |
 
-xong đó chọn mục `6. Load BL2 preloader via TFTP then write to `
+- **Dữ liệu hiệu chuẩn laser (BOB calibration):** Nằm tại offset `0x0` (512 bytes) của phân vùng `reservearea` (`en7572_bob.conf`). Không được xóa phân vùng này; nếu mất hoặc lỗi công suất laser, cần khôi phục lại từ bản backup gốc.
 
-xong reset thử lên uboot openwrt
+---
 
 ## 🔗 Tài liệu tham khảo
 
@@ -294,7 +377,7 @@ Discord:
 
 👉 **https://discord.gg/5XbjNNtRFW**
 
-Nếu bạn có thêm thông tin về phần cứng, pinout, partition layout hoặc quy trình OpenWrt cho **XSW250-NS**, hãy mở **Issue / Pull Request** để cùng bổ sung tài liệu.
+Nếu bạn có thêm thông tin về phần cứng, pinout, partition layout hoặc kết quả thử nghiệm OpenWrt / XGS-PON cho **XSW250-NS**, hãy mở **Issue / Pull Request** để cùng bổ sung tài liệu.
 
 ---
 
