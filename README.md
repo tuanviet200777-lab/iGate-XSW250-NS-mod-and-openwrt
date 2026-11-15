@@ -276,17 +276,7 @@ bootm 0x46000000
 
 Đợi khoảng 30–60 giây để OpenWrt khởi động tạm thời trên RAM.
 
-### 2. Flash vĩnh viễn vào bộ nhớ NAND (`sysupgrade`)
-
-1. Dùng SCP / WinSCP chép tệp `*-squashfs-sysupgrade.itb` từ máy tính vào thư mục `/tmp/` của router (IP `192.168.1.1`, user `root`, không mật khẩu):
-   ```bash
-   scp openwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb root@192.168.1.1:/tmp/
-   ```
-2. Trong cửa sổ terminal (UART hoặc SSH), chạy lệnh nâng cấp hệ thống:
-   ```sh
-   sysupgrade -n /tmp/openwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb
-   ```
-3. Chờ khoảng 1–2 phút để router ghi phân vùng UBI vào NAND và tự khởi động lại.
+### 2. Khởi động bản Initramfs Recovery qua Uboot openwrt (khuyên dùng)
 
 ---
 
