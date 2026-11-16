@@ -194,6 +194,8 @@ Tải toàn bộ các partition/MTD về máy tính và lưu ở nơi an toàn (
 
 ## 📦 Tạo file `all_flash.bin`
 
+(ko cần thiếu nếu bạn muốn roll backup dạng bên XSW050-ns)
+
 Sau khi đã có các file `mtd*` backup:
 
 ### 1. Chuẩn bị thư mục
