@@ -441,7 +441,6 @@ Discord:
 Nếu bạn có thêm thông tin về phần cứng, pinout, partition layout hoặc kết quả thử nghiệm OpenWrt / XGS-PON cho **XSW250-NS**, hãy mở **Issue / Pull Request** để cùng bổ sung tài liệu.
 
 ---
-
-&lt;p align=&quot;center&quot;&gt;
-  &lt;b&gt;⚡ VNPT iGate XSW250-NS • XGS-PON • Wi-Fi 6 • OpenWrt Research ⚡&lt;/b&gt;
-&lt;/p&gt;
+<p align="center">
+  <b>⚡ VNPT iGate XSW250-NS • XGS-PON • Wi-Fi 6 • OpenWrt Research ⚡</b>
+</p>
