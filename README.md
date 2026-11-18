@@ -1,11 +1,11 @@
 # 🚀 VNPT iGate XSW250-NS — OpenWrt & Hardware Notes
 
-&lt;p align=&quot;center&quot;&gt;
-  &lt;img src=&quot;https://img.shields.io/badge/Device-VNPT%20iGate%20XSW250--NS-blue?style=for-the-badge&quot; alt=&quot;Device&quot;&gt;
-  &lt;img src=&quot;https://img.shields.io/badge/PON-XGS--PON-orange?style=for-the-badge&quot; alt=&quot;XGS-PON&quot;&gt;
-  &lt;img src=&quot;https://img.shields.io/badge/Wi--Fi-Wi--Fi%206-brightgreen?style=for-the-badge&quot; alt=&quot;Wi-Fi 6&quot;&gt;
-  &lt;img src=&quot;https://img.shields.io/badge/OpenWrt-Research-informational?style=for-the-badge&quot; alt=&quot;OpenWrt Research&quot;&gt;
-&lt;/p&gt;
+<p align="center">
+  <img src="https://img.shields.io/badge/Device-VNPT%20iGate%20XSW250--NS-blue?style=for-the-badge" alt="Device">
+  <img src="https://img.shields.io/badge/PON-XGS--PON-orange?style=for-the-badge" alt="XGS-PON">
+  <img src="https://img.shields.io/badge/Wi--Fi-Wi--Fi%206-brightgreen?style=for-the-badge" alt="Wi-Fi 6">
+  <img src="https://img.shields.io/badge/OpenWrt-Research-informational?style=for-the-badge" alt="OpenWrt Research">
+</p>
 
 > [!NOTE]
 > Repo OpenWrt này được fork/phát triển dựa trên dự án:
