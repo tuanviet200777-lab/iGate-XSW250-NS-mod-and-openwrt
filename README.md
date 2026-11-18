@@ -279,13 +279,11 @@ bootm 0x46000000
 
 Đợi khoảng 30–60 giây để OpenWrt khởi động tạm thời trên RAM.
 
-### 2. Nạp bản Sysupgrade vĩnh viễn vào NAND
+### 2. Nạp bản Initramfs Recovery qua Uboot openwrt (Khuyên dùng)
 
-Khi OpenWrt đã chạy trên RAM, chép tệp `*-squashfs-sysupgrade.itb` vào `/tmp` (qua `scp` hoặc LuCI **System → Backup / Flash Firmware**) rồi chạy:
+Giống như cách 1 mà tự động:)) lệnh 2.Boot system via TFTP
 
-```sh
-sysupgrade -n /tmp/openwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb
-```
+Hoặc ghi thẳng vào nand thì 4. Load production system via TFTP then write to NAND
 
 ---
 
