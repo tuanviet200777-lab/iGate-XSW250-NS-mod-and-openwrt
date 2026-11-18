@@ -1,11 +1,11 @@
 # 🚀 VNPT iGate XSW250-NS — OpenWrt & Hardware Notes
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Device-VNPT%20iGate%20XSW250--NS-blue?style=for-the-badge" alt="Device">
-  <img src="https://img.shields.io/badge/PON-XGS--PON-orange?style=for-the-badge" alt="XGS-PON">
-  <img src="https://img.shields.io/badge/Wi--Fi-Wi--Fi%206-brightgreen?style=for-the-badge" alt="Wi-Fi 6">
-  <img src="https://img.shields.io/badge/OpenWrt-Research-informational?style=for-the-badge" alt="OpenWrt Research">
-</p>
+&lt;p align=&quot;center&quot;&gt;
+  &lt;img src=&quot;https://img.shields.io/badge/Device-VNPT%20iGate%20XSW250--NS-blue?style=for-the-badge&quot; alt=&quot;Device&quot;&gt;
+  &lt;img src=&quot;https://img.shields.io/badge/PON-XGS--PON-orange?style=for-the-badge&quot; alt=&quot;XGS-PON&quot;&gt;
+  &lt;img src=&quot;https://img.shields.io/badge/Wi--Fi-Wi--Fi%206-brightgreen?style=for-the-badge&quot; alt=&quot;Wi-Fi 6&quot;&gt;
+  &lt;img src=&quot;https://img.shields.io/badge/OpenWrt-Research-informational?style=for-the-badge&quot; alt=&quot;OpenWrt Research&quot;&gt;
+&lt;/p&gt;
 
 > [!NOTE]
 > Repo OpenWrt này được fork/phát triển dựa trên dự án:
@@ -33,6 +33,7 @@
 - [📦 Tạo file `all_flash.bin`](#-tạo-file-all_flashbin)
 - [⚡ Cài đặt U-Boot của OpenWrt](#-cài-đặt-u-boot-của-openwrt)
 - [🛠️ Nạp firmware OpenWrt vào NAND](#️-nạp-firmware-openwrt-vào-nand)
+- [♻️ Khôi phục firmware gốc (Rollback to Stock)](#️-khôi-phục-firmware-gốc-rollback-to-stock)
 - [🌐 Cấu hình mạng: Bản chưa có PON vs. Bản có PON](#-cấu-hình-mạng-bản-chưa-có-pon-vs-bản-có-pon)
 - [🔗 Tài liệu tham khảo](#-tài-liệu-tham-khảo)
 - [💬 Hỗ trợ / thảo luận](#-hỗ-trợ--thảo-luận)
@@ -194,7 +195,7 @@ Tải toàn bộ các partition/MTD về máy tính và lưu ở nơi an toàn (
 
 ## 📦 Tạo file `all_flash.bin`
 
-(ko cần thiếu nếu bạn muốn roll backup dạng bên XSW050-ns)
+*(Dùng khi muốn gộp các phân vùng backup thành một ảnh duy nhất để khôi phục về firmware gốc theo cách bên XSW050-NS).*
 
 Sau khi đã có các file `mtd*` backup:
 
@@ -221,7 +222,7 @@ Mở CMD/PowerShell tại thư mục trên và chạy:
 python build_stock_all_flash.py . -o all_flash.bin
 ```
 
-Nếu script hoàn tất mà không báo lỗi, file kết quả sẽ là `all_flash.bin`.
+Nếu script hoàn tất mà không báo lỗi, file kết quả sẽ là `all_flash.bin` (dung lượng chuẩn **`85,721,088` bytes / `0x051C0000`**).
 
 > [!WARNING]
 > `all_flash.bin` chỉ nên được tạo từ **backup đúng của thiết bị/revision tương ứng**. Không flash file của máy khác khi chưa biết rõ partition layout, calibration data và dữ liệu riêng của thiết bị.
@@ -278,7 +279,75 @@ bootm 0x46000000
 
 Đợi khoảng 30–60 giây để OpenWrt khởi động tạm thời trên RAM.
 
-### 2. Khởi động bản Initramfs Recovery qua Uboot openwrt (khuyên dùng)
+### 2. Nạp bản Sysupgrade vĩnh viễn vào NAND
+
+Khi OpenWrt đã chạy trên RAM, chép tệp `*-squashfs-sysupgrade.itb` vào `/tmp` (qua `scp` hoặc LuCI **System → Backup / Flash Firmware**) rồi chạy:
+
+```sh
+sysupgrade -n /tmp/openwrt-airoha-an7581-vnpt_xsw250ns-ubi-squashfs-sysupgrade.itb
+```
+
+---
+
+## ♻️ Khôi phục firmware gốc (Rollback to Stock)
+
+> [!IMPORTANT]
+> Bản OpenWrt / `initramfs` của XSW250-NS không khai báo phân vùng `all_flash` trong `/proc/mtd` và khóa ghi phân vùng `bl2` (`flags = 0x0`). Vì vậy, cách khôi phục trực tiếp và an toàn nhất là **nạp file `all_flash.bin` từ U-Boot qua UART + TFTP**.
+
+### 1. Chuẩn bị TFTP Server trên máy tính
+
+1. Nối cáp mạng LAN từ PC vào router, đặt IP tĩnh cho PC là **`192.168.1.254`**.
+2. Mở **Tftpd32 / Tftpd64**:
+   - **Current Directory:** chọn thư mục chứa file `all_flash.bin` (`85,721,088` bytes, tạo ở mục [Tạo file `all_flash.bin`](#-tạo-file-all_flashbin)).
+   - **Server interfaces:** chọn card mạng `192.168.1.254`.
+   - Tắt tạm Windows Firewall (hoặc mở cổng UDP 69) để router tải được file.
+
+### 2. Vào dòng lệnh U-Boot (`AN7581>`) qua UART
+
+Kết nối UART (`115200 8N1`), khởi động lại router và vào dấu nhắc `AN7581>`. Kiểm tra thiết bị MTD và biến môi trường trước khi xóa:
+
+```bash
+mtd list
+printenv ipaddr serverip loadaddr
+```
+
+Xác nhận layout trên `spi-nand0` và địa chỉ RAM:
+- `0x000000000000-0x000000020000` : `"bl2"`
+- `0x000000020000-0x00000ddc0000` : `"ubi"`
+- `0x00000ddc0000-0x00000e000000` : `"reservearea"`
+- `ipaddr=192.168.1.1`, `serverip=192.168.1.254`, `loadaddr=0x90000000`
+
+### 3. Tải vào RAM, xóa vùng OpenWrt và ghi lại firmware gốc
+
+Chạy lần lượt từng lệnh sau trên `AN7581>` (đợi lệnh trước hoàn tất hẳn mới chạy lệnh sau, **tuyệt đối không tắt nguồn trong lúc xóa/ghi**):
+
+1. Tải `all_flash.bin` vào RAM tại `0x90000000`:
+   ```bash
+   tftpboot 0x90000000 all_flash.bin
+   ```
+   Phải thấy log báo truyền đủ: `Bytes transferred = 85721088 (51c0000 hex)`.
+
+2. Xóa sạch vùng `bl2` + `ubi` của OpenWrt (`0x0` → `0x0ddc0000`, dừng ngay trước `reservearea` để giữ nguyên dữ liệu quang BOB & `romfile` backup):
+   ```bash
+   mtd erase spi-nand0 0x0 0x0ddc0000
+   ```
+
+3. Ghi `all_flash.bin` (`0x051c0000` bytes) từ RAM lên `spi-nand0` tại offset `0x0`:
+   ```bash
+   mtd write spi-nand0 0x90000000 0x0 0x051c0000
+   ```
+
+4. Khởi động lại router:
+   ```bash
+   reset
+   ```
+
+### 4. Kiểm tra sau khi khởi động lại
+
+Quan sát log UART sau khi `reset` để xác nhận thiết bị đã về firmware gốc hoàn chỉnh:
+- Bootloader về `U-Boot 2014.04-rc1` và kernel `Linux 5.4.55` (`econet,en7581`), nhận đủ 12 phân vùng MTD gốc.
+- Đọc thành công dữ liệu hiệu chuẩn quang `en7572_bob.conf` (`MD32 BOB load data done!`), xPON/OMCI đạt `OMCI_STATE_RUN`.
+- PHY 2.5GbE `EN8811H`, các cổng LAN (`eth0.1`–`eth0.4`), Wi-Fi 2.4G/5G (`ra0`/`rai0`), DHCP (`udhcpd`) và giao diện web gốc (`http://192.168.1.1`) hoạt động bình thường.
 
 ---
 
@@ -373,6 +442,6 @@ Nếu bạn có thêm thông tin về phần cứng, pinout, partition layout ho
 
 ---
 
-<p align="center">
-  <b>⚡ VNPT iGate XSW250-NS • XGS-PON • Wi-Fi 6 • OpenWrt Research ⚡</b>
-</p>
+&lt;p align=&quot;center&quot;&gt;
+  &lt;b&gt;⚡ VNPT iGate XSW250-NS • XGS-PON • Wi-Fi 6 • OpenWrt Research ⚡&lt;/b&gt;
+&lt;/p&gt;
