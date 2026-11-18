@@ -17,7 +17,9 @@
 
 > [!IMPORTANT]
 > Đã có bản thử nghiệm PON driver
+
 > Thử nghiệm 1:Build mới hoàn toàn bằng openwrt sử dụng drive (`ponwrt`) — cần tìm người test trên hạ tầng XGS-PON (pre-release1).
+
 > Thử nghiệm 2:Build dạng Hybrid/dualboot thay đổi slot phụ tclinux_slave thành openwrt nối vào slot chính - cần tìm người test trên hạ tầng XGS-PON (pre-release2).
 
 ---
